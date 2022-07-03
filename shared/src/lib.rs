@@ -38,14 +38,21 @@ pub struct PublicPlayer {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum  Challenge {
-    MD5HashCash(MD5HashCashInput)
+pub enum Challenge {
+    MD5HashCash(MD5HashCashInput),
+    MonstrousMaze(MonstrousMazeInput),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MD5HashCashInput {
     pub complexity: u32,
     pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MonstrousMazeInput {
+    pub grid: String,
+    pub endurance: u8,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,6 +70,11 @@ pub enum ChallengeAnswer {
 pub struct MD5HashCashOutput {
     pub seed: u64,
     pub hashcode: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MonstrousMazeOutput {
+    pub path: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

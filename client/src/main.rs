@@ -1,11 +1,12 @@
 mod hash_cash;
+mod monstrous_maze;
 
 use std::io;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
 use shared::{ChallengeAnswer, ChallengeResult, MD5HashCashInput, MD5HashCashOutput, Message, Subscribe};
-use shared::Challenge::MD5HashCash;
+use shared::Challenge::{MD5HashCash, MonstrousMaze};
 
 fn main() {
     let stream = std::net::TcpStream::connect("localhost:7878");
@@ -32,6 +33,16 @@ fn main() {
                                     ChallengeResult {
                                         answer: ChallengeAnswer::MD5HashCash {
                                             0: hash_cash::solve_md5(MD5HashCashInput),
+                                        },
+                                        next_target: "dark_salad".to_string()
+                                    }
+                                ))
+                            },
+                            MonstrousMaze(MonstrousMazeInput) => {
+                                write_message(&mut stream, Message::ChallengeResult(
+                                    ChallengeResult {
+                                        answer: ChallengeAnswer::MonstrousMaze {
+                                            0: monstrous_maze::solve_monstrous_maze(MonstrousMazeInput),
                                         },
                                         next_target: "dark_salad".to_string()
                                     }
