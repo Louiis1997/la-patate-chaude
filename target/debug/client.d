@@ -1,1 +1,0 @@
-/Users/louis/Cours/Mastere/M1/Rust/Rust_Project/target/debug/client: /Users/louis/Cours/Mastere/M1/Rust/Rust_Project/client/src/main.rs /Users/louis/Cours/Mastere/M1/Rust/Rust_Project/shared/src/lib.rs
