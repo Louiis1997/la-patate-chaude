@@ -1,8 +1,8 @@
 mod hash_cash;
+mod monstrous_maze;
 
-use std::io;
 use std::str::from_utf8;
-use shared::{ChallengeAnswer, ChallengeResult, MD5HashCashInput, MD5HashCashOutput, Message, Subscribe, SubscribeResult};
+use shared::{ChallengeAnswer, ChallengeResult, Message, Subscribe, SubscribeResult};
 use shared::Challenge::{MD5HashCash, MonstrousMaze};
 
 fn main() {
@@ -15,7 +15,7 @@ fn main() {
             //let mut buffer = String::new();
             //io::stdin().read_line(&mut buffer).unwrap();
             //shared::write_message(&mut stream, Message::Subscribe(Subscribe { name: buffer.trim_end().to_string() }));
-            shared::write_message(&mut stream, Message::Subscribe(Subscribe { name: "free_patatoo".to_string() }));
+            shared::write_message(&mut stream, Message::Subscribe(Subscribe { name: "free_patato".to_string() }));
             let response = shared::read_message(& mut stream);
             println!("{}", from_utf8(&response).unwrap());
             loop {
@@ -41,11 +41,11 @@ fn main() {
                                 let response = shared::read_message(& mut stream);
                                 println!("{}", from_utf8(&response).unwrap());
                             },
-                            MonstrousMaze(MonstrousMazeInput) => {
+                            MonstrousMaze(monstrous_maze_input) => {
                                 shared::write_message(&mut stream, Message::ChallengeResult(
                                     ChallengeResult {
                                         answer: ChallengeAnswer::MonstrousMaze {
-                                            0: monstrous_maze::solve_monstrous_maze(MonstrousMazeInput),
+                                            0: monstrous_maze::solve_monstrous_maze(monstrous_maze_input),
                                         },
                                         next_target: "".to_string()
                                     }
