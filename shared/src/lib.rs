@@ -1,5 +1,6 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::str::{from_utf8};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,7 +41,7 @@ pub struct PublicPlayer {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum  Challenge {
+pub enum Challenge {
     MD5HashCash(MD5HashCashInput),
     MonstrousMaze(MonstrousMazeInput),
 }
@@ -131,36 +132,66 @@ pub enum Message {
     EndOfGame(EndOfGame),
 }
 
-fn serialize_message(message : Message) -> String {
-    let serialized = serde_json::to_string(&message);
-    return serialized.unwrap();
+pub fn send_message(stream: &mut TcpStream, message : Message) {
+    match write_message(stream, message) {
+        Ok(_) => {}
+        Err(err) => {
+            panic!("Enable to send message to the server: {}", err)
+        }
+    }
 }
 
-pub fn write_message(stream: &mut TcpStream, message : Message){
-    let serialized = serialize_message(message);
-    let size = serialized.len() as u32;
-    let size = size.to_be_bytes();
-    stream.write_all(&size).unwrap();
-    stream.write_all(&serialized.as_bytes()).unwrap();
+fn write_message(stream: &mut TcpStream, message : Message) -> std::io::Result<()> {
+    match serialize_message(message) {
+        Ok(serialized)  => {
+            let size = serialized.len() as u32;
+            let size = size.to_be_bytes();
+            stream.write_all(&size)?;
+            stream.write_all(&serialized.as_bytes())?;
+            Ok(())
+        }
+        Err(err) => panic!("Serialization failed: {}", err),
+    }
 }
 
-pub fn read_message(stream: &mut TcpStream) -> Vec<u8> {
+fn serialize_message(message : Message) -> serde_json::Result<String> {
+    let serialized = serde_json::to_string(&message)?;
+    Ok(serialized)
+}
+
+pub fn read_message(stream: &mut TcpStream) -> String {
     let mut data = [0 as u8; 4];
     match stream.read_exact(&mut data) {
         Ok(_) => {
-            let size = u32::from_be_bytes(data) as usize;
-            let mut data : Vec<u8> = vec![0u8; size];
-            match stream.read_exact(&mut data) {
-                Ok(_) => {
-                    return data;
-                },
-                Err(e) => {
-                    panic!("Failed to receive data: {}", e);
-                }
-            }
+            read_message_data(stream, data)
         },
         Err(e) => {
-            panic!("Failed to receive data: {}", e);
+            panic!("Failed to read message size: {}", e);
+        }
+    }
+}
+
+fn read_message_data(stream: &mut TcpStream, data: [u8; 4]) -> String {
+    let size = u32::from_be_bytes(data) as usize;
+    let mut data : Vec<u8> = vec![0u8; size];
+    match stream.read_exact(&mut data) {
+        Ok(_) => {
+            return vec_to_string(data);
+        },
+        Err(e) => {
+            panic!("Failed to read message data: {}", e);
+        }
+    }
+}
+
+fn vec_to_string(data: Vec<u8>) -> String {
+    match from_utf8(&data) {
+        Ok(response) => {
+            println!("{}", response);
+            return response.to_string();
+        }
+        Err(_) => {
+            panic!("Failed to ")
         }
     }
 }

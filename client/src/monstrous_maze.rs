@@ -50,7 +50,7 @@ struct GridPossibleSolution {
     endurance_left: i8,
 }
 
-const START_CHARACTER: char = 'Y';
+const START_CHARACTER: char = 'I';
 const END_CHARACTER: char = 'X';
 const MONSTER_CHARACTER: char = 'M';
 const FREE_WAY_CHARACTER: char = ' ';
