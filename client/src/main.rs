@@ -1,8 +1,9 @@
 mod hash_cash;
 mod monstrous_maze;
 
+use rand::Rng;
 use clap::Parser;
-use shared::{ChallengeAnswer, ChallengeResult, Message, Subscribe, SubscribeResult};
+use shared::{ChallengeAnswer, ChallengeResult, Message, PublicPlayer, Subscribe, SubscribeResult};
 use shared::Challenge::{MD5HashCash, MonstrousMaze};
 
 #[derive(Parser, Debug)]
@@ -22,6 +23,7 @@ fn main() {
             shared::send_message(&mut stream, Message::Hello);
             shared::read_message(&mut stream);
             shared::send_message(&mut stream, Message::Subscribe(Subscribe { name: args.name }));
+            let mut public_leader_board = Vec::new();
             loop {
                 let response = shared::read_message(&mut stream);
                 match serde_json::from_str(&response) {
@@ -35,6 +37,9 @@ fn main() {
                                     }
                                 }
                             }
+                            Message::PublicLeaderBoard(leader_board) => {
+                                public_leader_board = leader_board.0
+                            }
                             Message::Challenge(response) => {
                                 match response {
                                     MD5HashCash(md5_hash_cash_input) => {
@@ -43,7 +48,7 @@ fn main() {
                                                 answer: ChallengeAnswer::MD5HashCash {
                                                     0: hash_cash::solve_md5(md5_hash_cash_input),
                                                 },
-                                                next_target: "".to_string()
+                                                next_target: next_target(&public_leader_board)
                                             }
                                         ));
                                     },
@@ -53,7 +58,7 @@ fn main() {
                                                 answer: ChallengeAnswer::MonstrousMaze {
                                                     0: monstrous_maze::solve_monstrous_maze(monstrous_maze_input),
                                                 },
-                                                next_target: "".to_string()
+                                                next_target: next_target(&public_leader_board)
                                             }
                                         ));
                                     }
@@ -73,6 +78,11 @@ fn main() {
         }
         Err(err) => panic!("Cannot connect: {err}")
     }
+}
+
+fn next_target(public_leader_board: &Vec<PublicPlayer>) -> String {
+    let mut rng = rand::thread_rng();
+    return public_leader_board[rng.gen_range(0..public_leader_board.len())].name.to_string();
 }
 
 
