@@ -62,7 +62,9 @@ fn main() {
                             Message::EndOfGame(..) => {
                                 break;
                             }
-                            _ => {}
+                            _ => {
+                                println!("Unexpected message from server : {}", response)
+                            }
                         }
                     }
                     Err(err) => {
@@ -71,9 +73,6 @@ fn main() {
                 }
             }
         }
-        Err(err) => panic!("Cannot connect: {err}")
+        Err(_err) => panic!("Cannot connect: {_err}")
     }
 }
-
-
-

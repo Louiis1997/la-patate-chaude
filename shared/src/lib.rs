@@ -1,3 +1,5 @@
+pub mod challenges;
+
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str::{from_utf8};
@@ -30,7 +32,7 @@ pub struct PublicLeaderBoard (
     pub Vec<PublicPlayer>
 );
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PublicPlayer {
     pub name: String,
     pub stream_id: String,
@@ -40,43 +42,43 @@ pub struct PublicPlayer {
     pub total_used_time: f64
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Challenge {
     MD5HashCash(MD5HashCashInput),
     MonstrousMaze(MonstrousMazeInput),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MD5HashCashInput {
     pub complexity: u32,
     pub message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MonstrousMazeInput {
     pub grid: String,
     pub endurance: u8,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChallengeResult {
     pub answer: ChallengeAnswer,
     pub next_target: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ChallengeAnswer {
     MD5HashCash(MD5HashCashOutput),
     MonstrousMaze(MonstrousMazeOutput),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MD5HashCashOutput {
     pub seed: u64,
     pub hashcode: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MonstrousMazeOutput {
     pub path: String,
 }
@@ -141,7 +143,7 @@ pub fn send_message(stream: &mut TcpStream, message : Message) {
     }
 }
 
-fn write_message(stream: &mut TcpStream, message : Message) -> std::io::Result<()> {
+pub fn write_message(stream: &mut TcpStream, message : Message) -> std::io::Result<()> {
     match serialize_message(message) {
         Ok(serialized)  => {
             let size = serialized.len() as u32;
