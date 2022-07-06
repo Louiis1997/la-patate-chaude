@@ -103,14 +103,26 @@ fn main() {
                     }
                     let current_challenge = MD5HashCashChallenge::new(challenge_input.clone());
                     let success = current_challenge.verify(&hash_cash_answer);
-                    let current_player = update_player_in_player_list(success, addr.clone(), current_challenge_used_time);
-                    let next_player = get_next_player(challenge_result.clone(), PUBLIC_PLAYERS.clone());
-
-                    println!("Current player name : {}\n Next player name : {}", current_player.name, next_player.name);
-                    send_round_summarize(stream, current_challenge_used_time, current_player.clone().name);
-                    played_challenges += 1;
-                    // TODO: use next_player stream ?
-                    handle_player_challenge(stream, addr, played_challenges);
+                    match update_player_in_player_list(success, addr.clone(), current_challenge_used_time) {
+                        Some(current_player) => {
+                            match get_next_player(challenge_result.clone(), PUBLIC_PLAYERS.clone()) {
+                                Some(next_player) => {
+                                    println!("Current player name : {}\n Next player name : {}", current_player.name, next_player.name);
+                                    send_round_summarize(stream, MD5HashCashChallenge::name(), current_challenge_used_time, current_player.clone().name);
+                                    played_challenges += 1;
+                                    // TODO: use next_player stream ?
+                                    handle_player_challenge(stream, addr, played_challenges);
+                                }
+                                None => {
+                                    println!("No more players ???");
+                                }
+                            }
+                        }
+                        None => {
+                            println!("Failed to update current player in player list");
+                            return;
+                        }
+                    }
                 },
                 ChallengeAnswer::MonstrousMaze { 0: monstrous_maze_answer } => {
                     let challenge_input;
@@ -124,14 +136,26 @@ fn main() {
                     }
                     let current_challenge = MonstrousMazeChallenge::new(challenge_input.clone());
                     let success = current_challenge.verify(&monstrous_maze_answer);
-                    let current_player = update_player_in_player_list(success, addr.clone(), current_challenge_used_time);
-                    let next_player = get_next_player(challenge_result.clone(), PUBLIC_PLAYERS.clone());
-
-                    println!("Current player name : {}\n Next player name : {}", current_player.name, next_player.name);
-                    send_round_summarize(stream, current_challenge_used_time, current_player.clone().name);
-                    played_challenges += 1;
-                    // TODO: use next_player stream ?
-                    handle_player_challenge(stream, addr, played_challenges);
+                    match update_player_in_player_list(success, addr.clone(), current_challenge_used_time) {
+                        Some(current_player) => {
+                            match get_next_player(challenge_result.clone(), PUBLIC_PLAYERS.clone()) {
+                                Some(next_player) => {
+                                    println!("Current player name : {}\n Next player name : {}", current_player.name, next_player.name);
+                                    send_round_summarize(stream, MonstrousMazeChallenge::name(), current_challenge_used_time, current_player.clone().name);
+                                    played_challenges += 1;
+                                    // TODO: use next_player stream ?
+                                    handle_player_challenge(stream, addr, played_challenges);
+                                }
+                                None => {
+                                    println!("No more players ???");
+                                }
+                            }
+                        }
+                        None => {
+                            println!("Failed to update current player in player list");
+                            return;
+                        }
+                    }
                 }
             },
             _ => {}
@@ -176,27 +200,22 @@ fn main() {
         }
     }
 
-    unsafe fn update_player_in_player_list(success: bool, addr: String, used_time: f64) -> PublicPlayer {
-        let current_player = PUBLIC_PLAYERS.iter().find(|player| player.stream_id == addr);
-        if current_player.is_none() {
-            panic!("Player with IP address {} not found.", addr);
-        } else {
-            let mut current_player = current_player.unwrap().clone();
-            update_player_score(&mut current_player, success);
-            increment_player_steps(&mut current_player);
-            replace_player_in_players(&current_player);
-            current_player.total_used_time += used_time;
-            return current_player;
-        }
+    unsafe fn update_player_in_player_list(success: bool, addr: String, used_time: f64) -> Option<PublicPlayer> {
+        let current_player = PUBLIC_PLAYERS.iter().find(|player| player.stream_id == addr)?;
+        let mut current_player = current_player.clone();
+        update_player_score(&mut current_player, success);
+        increment_player_steps(&mut current_player);
+        replace_player_in_players(&current_player);
+        current_player.total_used_time += used_time;
+        Some(current_player)
     }
 
-    fn get_next_player(challenge_result: ChallengeResult, public_players: Vec<PublicPlayer>) -> PublicPlayer {
-        let next_player_result = public_players.iter().find(|player| player.name == challenge_result.next_target);
-        return if next_player_result.is_none() {
-            get_random_next_player(public_players)
-        } else {
-            next_player_result.unwrap().clone()
-        };
+    fn get_next_player(challenge_result: ChallengeResult, public_players: Vec<PublicPlayer>) -> Option<PublicPlayer> {
+        if challenge_result.next_target == "" {
+            return Some(get_random_next_player(public_players))
+        }
+        let next_player_result = public_players.iter().find(|player| player.name == challenge_result.next_target)?;
+        Some(next_player_result.clone())
     }
 
     fn get_random_next_player(public_players: Vec<PublicPlayer>) -> PublicPlayer {
@@ -206,9 +225,9 @@ fn main() {
         return active_players[random_index].clone();
     }
 
-    fn send_round_summarize(stream: &mut TcpStream, used_time: f64, current_player_name: String) {
+    fn send_round_summarize(stream: &mut TcpStream, challenge_name: String, used_time: f64, current_player_name: String) {
         shared::write_message(stream, Message::RoundSummary(RoundSummary {
-            challenge: MonstrousMazeChallenge::name(),
+            challenge: challenge_name,
             chain: vec![
                 ReportedChallengeResult {
                     name: "free_potato".to_string(),

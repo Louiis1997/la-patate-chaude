@@ -1,14 +1,14 @@
-pub fn generate_seed(already_generated_seed: &Vec<u64>) -> u64 {
+pub fn generate_seed(already_generated_seed: &Vec<u64>) -> Option<u64> {
     if already_generated_seed.len() == 0 {
-        return 1;
+        return Some(1);
     }
 
-    let last_generated_seed = already_generated_seed.last().unwrap();
+    let last_generated_seed = already_generated_seed.last()?;
     let generated_seed = last_generated_seed + 1;
-    if already_generated_seed.contains(&generated_seed) {
+    return if already_generated_seed.contains(&generated_seed) {
         generate_seed(already_generated_seed)
     } else {
-        return generated_seed;
+        Some(generated_seed)
     }
 }
 

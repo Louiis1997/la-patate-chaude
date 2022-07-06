@@ -52,27 +52,33 @@ impl Challenge for MD5HashCash {
         };
 
         while !solved {
-            let seed = generate_seed(&generated_seeds);
-            generated_seeds.push(seed);
-            // println!("seed: {}", seed);
+            match generate_seed(&generated_seeds) {
+                Some(seed) => {
+                    generated_seeds.push(seed);
+                    // println!("seed: {}", seed);
 
-            let seed_as_hexadecimal_string = complete_hexadecimal_seed_with_zero(format!("{:x}", seed));
-            // println!("New seed as hexadecimal string: {}", seed_as_hexadecimal_string);
+                    let seed_as_hexadecimal_string = complete_hexadecimal_seed_with_zero(format!("{:x}", seed));
+                    // println!("New seed as hexadecimal string: {}", seed_as_hexadecimal_string);
 
-            let concatenated = format!("{}{}", seed_as_hexadecimal_string, self.input.message.as_str());
+                    let concatenated = format!("{}{}", seed_as_hexadecimal_string, self.input.message.as_str());
 
-            let hashcode = md5::compute(concatenated);
+                    let hashcode = md5::compute(concatenated);
 
-            let hashcode_string = format!("{:x}", hashcode).to_uppercase();
-            // println!("Digest string: {}", hashcode_string);
+                    let hashcode_string = format!("{:x}", hashcode).to_uppercase();
+                    // println!("Digest string: {}", hashcode_string);
 
-            let hashcode_binary = convert_string_to_binary(hashcode_string.clone());
-            // println!("Digest bits: {:?}", digest_binary);
+                    let hashcode_binary = convert_string_to_binary(hashcode_string.clone());
+                    // println!("Digest bits: {:?}", digest_binary);
 
-            if check_number_of_zero(hashcode_binary, self.input.complexity) {
-                final_output.seed = seed;
-                final_output.hashcode = hashcode_string.to_string();
-                solved = true;
+                    if check_number_of_zero(hashcode_binary, self.input.complexity) {
+                        final_output.seed = seed;
+                        final_output.hashcode = hashcode_string.to_string();
+                        solved = true;
+                    }
+                }
+                None => {
+                    panic!("Error while generating seed");
+                }
             }
             // println!("================================================================")
         }
@@ -120,34 +126,45 @@ impl Challenge for MonstrousMaze {
         };
 
         let possible_solutions = find_paths(&mut grid, grid_possible_solution);
+        match possible_solutions {
+            Some(solutions) => {
+                let no_solution_because_died = solutions.iter().all(|solution| solution.endurance_left <= 0);
+                if no_solution_because_died {
+                    println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
+                    return final_output;
+                }
 
-        let no_solution_because_died = possible_solutions.iter().all(|solution| solution.endurance_left <= 0);
-        if no_solution_because_died {
-            println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
-            return final_output;
+                // Filter successful & not empty paths
+                let successful_paths: Vec<&GridPossibleSolution> = solutions
+                    .iter()
+                    .filter(|path| path.success && !path.path_taken.is_empty())
+                    .collect::<Vec<&GridPossibleSolution>>();
+
+                if successful_paths.len() == 0 {
+                    println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
+                    return final_output;
+                }
+
+                // Display found paths
+                // println!("Found paths:");
+                // for path in &successful_paths {
+                //     println!("path {:?} - endurance: {} - success: {}", &path.path_taken, &path.endurance_left, &path.success);
+                // }
+
+                match get_best_path(successful_paths) {
+                    Some(best_path) => {
+                        final_output.path = best_path.path_taken.clone(); }
+                    None => {
+                        println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
+                    }
+                }
+
+                return final_output;
+            }
+            None => {
+                panic!("No possible solution found");
+            }
         }
-
-        // Filter successful & not empty paths
-        let successful_paths: Vec<&GridPossibleSolution> = possible_solutions
-            .iter()
-            .filter(|path| path.success && !path.path_taken.is_empty())
-            .collect::<Vec<&GridPossibleSolution>>();
-
-        if successful_paths.len() == 0 {
-            println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
-            return final_output;
-        }
-
-        // Display found paths
-        // println!("Found paths:");
-        // for path in &successful_paths {
-        //     println!("path {:?} - endurance: {} - success: {}", &path.path_taken, &path.endurance_left, &path.success);
-        // }
-
-        let best_path: &GridPossibleSolution = get_best_path(successful_paths);
-        final_output.path = best_path.path_taken.clone();
-
-        return final_output;
     }
 
     fn verify(&self, answer: &Self::Output) -> bool {

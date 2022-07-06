@@ -56,24 +56,24 @@ const MONSTER_CHARACTER: char = 'M';
 const FREE_WAY_CHARACTER: char = ' ';
 
 /// Get best path by used endurance and path length
-pub fn get_best_path(filtered_possible_solutions: Vec<&GridPossibleSolution>) -> &GridPossibleSolution {
-    return filtered_possible_solutions
+pub fn get_best_path(filtered_possible_solutions: Vec<&GridPossibleSolution>) -> Option<&GridPossibleSolution> {
+    let solution = filtered_possible_solutions
         .iter()
         .min_by(|a, b| {
             if a.endurance_left == b.endurance_left {
                 return a.path_taken.len().cmp(&b.path_taken.len());
             }
             return a.endurance_left.cmp(&b.endurance_left);
-        })
-        .unwrap()
+        })?;
+    Some(solution)
 }
 
-pub fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolution) -> Vec<GridPossibleSolution> {
+pub fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolution) -> Option<Vec<GridPossibleSolution>> {
     if grid_possible_solution.visited_coordinates.contains(&grid_possible_solution.current_coordinates) {
-        return vec![];
+        return Some(vec![]);
     }
     if grid_possible_solution.endurance_left <= 0 {
-        return vec![];
+        return Some(vec![]);
     }
 
     grid_possible_solution.visited_coordinates.push(grid_possible_solution.current_coordinates);
@@ -81,13 +81,13 @@ pub fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolut
     let mut paths: Vec<GridPossibleSolution> = vec![];
 
     let current_line: String = grid.grid[grid_possible_solution.current_coordinates.0 as usize].clone();
-    let current_char: char = current_line.chars().nth(grid_possible_solution.current_coordinates.1 as usize).unwrap() as char;
+    let current_char: char = current_line.chars().nth(grid_possible_solution.current_coordinates.1 as usize)? as char;
 
-    return if current_char == START_CHARACTER || current_char == END_CHARACTER || current_char == MONSTER_CHARACTER || current_char == FREE_WAY_CHARACTER {
+    if current_char == START_CHARACTER || current_char == END_CHARACTER || current_char == MONSTER_CHARACTER || current_char == FREE_WAY_CHARACTER {
         if current_char == END_CHARACTER {
             grid_possible_solution.success = true;
             paths.push(grid_possible_solution);
-            return paths;
+            return Some(paths);
         }
 
         if current_char == MONSTER_CHARACTER {
@@ -102,9 +102,9 @@ pub fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolut
         go_to_left(&mut all_paths, &grid_possible_solution, grid);
         go_to_bottom(&mut all_paths, &grid_possible_solution, grid);
 
-        all_paths
+        Some(all_paths)
     } else {
-        paths
+        Some(paths)
     }
 }
 
@@ -162,7 +162,14 @@ fn move_in_maze(
             success: false,
             endurance_left: grid_possible_solution.endurance_left,
         };
-        all_paths.append(&mut find_paths(grid, new_grid_possible_solution));
+        match find_paths(grid, new_grid_possible_solution) {
+            Some(mut paths) => {
+                all_paths.append(&mut paths);
+            }
+            None => {
+                // println!("No path found");
+            }
+        }
     }
 }
 
