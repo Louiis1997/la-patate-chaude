@@ -1,5 +1,6 @@
 use md5;
 use shared::{MD5HashCashInput, MD5HashCashOutput};
+use shared::{challenges::convert_string_to_binary, challenges::check_number_of_zero};
 
 pub fn solve_md5(input: MD5HashCashInput) -> MD5HashCashOutput {
     let mut solved = false;
@@ -56,48 +57,4 @@ fn complete_hexadecimal_seed_with_zero(input: String) -> String {
         return complete_hexadecimal_seed_with_zero(format!("0{}", input).to_string());
     }
     return input.to_uppercase();
-}
-
-fn convert_string_to_binary(input: String) -> String {
-    let mut name_in_binary = "".to_string();
-    // Call into_bytes() which returns a Vec<u8>, and iterate accordingly
-    // I only called clone() because this for loop takes ownership
-    for character in input.clone().chars() {
-        name_in_binary += to_binary(character);
-    }
-    return name_in_binary;
-}
-
-fn to_binary(c: char) -> &'static str {
-    match c {
-        '0' => "0000",
-        '1' => "0001",
-        '2' => "0010",
-        '3' => "0011",
-        '4' => "0100",
-        '5' => "0101",
-        '6' => "0110",
-        '7' => "0111",
-        '8' => "1000",
-        '9' => "1001",
-        'A' => "1010",
-        'B' => "1011",
-        'C' => "1100",
-        'D' => "1101",
-        'E' => "1110",
-        'F' => "1111",
-        _ => panic!("Invalid character in hexadecimal string"),
-    }
-}
-
-fn check_number_of_zero(input: String, complexity: u32) -> bool {
-    let mut number_of_zero = 0;
-    for character in input.chars() {
-        if character == '0' {
-            number_of_zero += 1;
-        } else {
-            return number_of_zero == complexity;
-        }
-    }
-    return false;
 }

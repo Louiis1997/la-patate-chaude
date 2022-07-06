@@ -76,7 +76,7 @@ fn main() {
                 }
             }
         }
-        Err(err) => panic!("Cannot connect: {err}")
+        Err(_err) => panic!("Cannot connect: {_err}")
     }
 }
 
