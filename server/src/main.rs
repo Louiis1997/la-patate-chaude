@@ -11,8 +11,10 @@ use shared::SubscribeError;
 use shared::SubscribeResult;
 use shared::Welcome;
 use shared::{Challenge::MD5HashCash, Challenge::MonstrousMaze};
-use shared::challenges::{Challenge, Challenges, MD5HashCash as MD5HashCashChallenge, MonstrousMaze as MonstrousMazeChallenge, Challenges::MonstrousMaze as MonstrousMazeChallengeEnum, Challenges::MD5HashCash as MD5HashCashChallengeEnum};
+use shared::challenges::{Challenge, Challenges, Challenges::MD5HashCash as MD5HashCashChallengeEnum, Challenges::MonstrousMaze as MonstrousMazeChallengeEnum};
 use rand::Rng;
+use shared::challenges::hash_cash::MD5HashCash as MD5HashCashChallenge;
+use shared::challenges::monstrous_maze::MonstrousMaze as MonstrousMazeChallenge;
 
 struct PublicPlayerTCPStream {
     player: PublicPlayer,
@@ -35,6 +37,7 @@ fn main() {
         thread::spawn(move || unsafe {
             handle_client(&stream);
         });
+        println!("caca");
     }
 
     unsafe fn handle_client(stream: &TcpStream) {

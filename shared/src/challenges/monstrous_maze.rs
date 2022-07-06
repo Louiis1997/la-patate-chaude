@@ -1,4 +1,87 @@
-use crate::MonstrousMazeInput;
+use crate::challenges::Challenge;
+use crate::{MonstrousMazeInput, MonstrousMazeOutput};
+
+#[derive(Debug, Clone)]
+pub struct MonstrousMaze {
+    pub input: MonstrousMazeInput,
+}
+
+impl Challenge for MonstrousMaze {
+    type Input = MonstrousMazeInput;
+    type Output = MonstrousMazeOutput;
+
+    fn name() -> String {
+        return "MonstrousMaze".to_string();
+    }
+
+    fn new(input: Self::Input) -> Self {
+        return Self { input};
+    }
+
+    fn solve(&self) -> Self::Output {
+        let mut final_output = MonstrousMazeOutput {
+            path: "".to_string(),
+        };
+
+        let mut grid: Grid = Grid::new(self.input.clone());
+        println!("Grid start: {:?}", grid.start);
+        println!("Grid end: {:?}", grid.end);
+
+        let grid_possible_solution: GridPossibleSolution = GridPossibleSolution {
+            path_taken: "".to_string(),
+            current_coordinates: (grid.start.0 as i64, grid.start.1 as i64),
+            visited_coordinates: vec![],
+            success: false,
+            endurance_left: grid.endurance as i8,
+        };
+
+        let possible_solutions = find_paths(&mut grid, grid_possible_solution);
+        match possible_solutions {
+            Some(solutions) => {
+                let no_solution_because_died = solutions.iter().all(|solution| solution.endurance_left <= 0);
+                if no_solution_because_died {
+                    println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
+                    return final_output;
+                }
+
+                // Filter successful & not empty paths
+                let successful_paths: Vec<&GridPossibleSolution> = solutions
+                    .iter()
+                    .filter(|path| path.success && !path.path_taken.is_empty())
+                    .collect::<Vec<&GridPossibleSolution>>();
+
+                if successful_paths.len() == 0 {
+                    println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
+                    return final_output;
+                }
+
+                // Display found paths
+                // println!("Found paths:");
+                // for path in &successful_paths {
+                //     println!("path {:?} - endurance: {} - success: {}", &path.path_taken, &path.endurance_left, &path.success);
+                // }
+
+                match get_best_path(successful_paths) {
+                    Some(best_path) => {
+                        final_output.path = best_path.path_taken.clone(); }
+                    None => {
+                        println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
+                    }
+                }
+
+                return final_output;
+            }
+            None => {
+                panic!("No possible solution found");
+            }
+        }
+    }
+
+    fn verify(&self, answer: &Self::Output) -> bool {
+        println!("{:?}", answer);
+        return true;
+    }
+}
 
 pub struct Grid {
     pub grid: Vec<String>,

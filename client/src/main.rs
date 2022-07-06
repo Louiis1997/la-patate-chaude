@@ -2,7 +2,9 @@ use rand::Rng;
 use clap::Parser;
 use shared::{ChallengeAnswer, ChallengeResult, Message, PublicPlayer, Subscribe, SubscribeResult};
 use shared::Challenge::{MD5HashCash, MonstrousMaze};
-use shared::challenges::{Challenge, MD5HashCash as MD5HashCashChallenge, MonstrousMaze as MonstrousMazeChallenge};
+use shared::challenges::Challenge;
+use shared::challenges::hash_cash::MD5HashCash as MD5HashCashChallenge;
+use shared::challenges::monstrous_maze::MonstrousMaze as MonstrousMazeChallenge;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

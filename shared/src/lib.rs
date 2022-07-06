@@ -192,8 +192,8 @@ fn vec_to_string(data: Vec<u8>) -> String {
             println!("{}", response);
             return response.to_string();
         }
-        Err(_) => {
-            panic!("Failed to ")
+        Err(e) => {
+            panic!("Failed to convert message data to string: {}", e);
         }
     }
 }
