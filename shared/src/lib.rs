@@ -134,7 +134,7 @@ pub enum Message {
     EndOfGame(EndOfGame),
 }
 
-pub fn send_message(stream: &mut TcpStream, message : Message) {
+pub fn send_message(stream: &TcpStream, message : Message) {
     match write_message(stream, message) {
         Ok(_) => {}
         Err(err) => {
@@ -143,7 +143,7 @@ pub fn send_message(stream: &mut TcpStream, message : Message) {
     }
 }
 
-pub fn write_message(stream: &mut TcpStream, message : Message) -> std::io::Result<()> {
+pub fn write_message(mut stream: &TcpStream, message : Message) -> std::io::Result<()> {
     match serialize_message(message) {
         Ok(serialized)  => {
             let size = serialized.len() as u32;
@@ -161,7 +161,7 @@ fn serialize_message(message : Message) -> serde_json::Result<String> {
     Ok(serialized)
 }
 
-pub fn read_message(stream: &mut TcpStream) -> String {
+pub fn read_message(mut stream: &TcpStream) -> String {
     let mut data = [0 as u8; 4];
     match stream.read_exact(&mut data) {
         Ok(_) => {
@@ -173,7 +173,7 @@ pub fn read_message(stream: &mut TcpStream) -> String {
     }
 }
 
-fn read_message_data(stream: &mut TcpStream, data: [u8; 4]) -> String {
+fn read_message_data(mut stream: &TcpStream, data: [u8; 4]) -> String {
     let size = u32::from_be_bytes(data) as usize;
     let mut data : Vec<u8> = vec![0u8; size];
     match stream.read_exact(&mut data) {
