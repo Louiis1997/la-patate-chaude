@@ -1,7 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::str::from_utf8;
 use std::thread;
-use shared::{ChallengeAnswer, ChallengeResult, ChallengeValue, EndOfGame, Ok, ReportedChallengeResult, RoundSummary};
+use shared::{BadResult, ChallengeAnswer, ChallengeResult, ChallengeValue, EndOfGame, Ok, ReportedChallengeResult, RoundSummary};
 use shared::MD5HashCashInput;
 use shared::Message;
 use shared::MonstrousMazeInput;
@@ -25,7 +25,7 @@ fn main() {
         Ok(l) => l,
         Err(_err) => panic!("Cannot bind: {_err}")
     };
-    static mut PUBLIC_PLAYERS_TCPSTREAM: Vec<PublicPlayerTCPStream> = Vec::new();
+    static mut PUBLIC_PLAYERS_TCP_STREAM: Vec<PublicPlayerTCPStream> = Vec::new();
     static mut PUBLIC_PLAYERS: Vec<PublicPlayer> = Vec::new();
 
     for stream in listener.incoming() {
@@ -46,14 +46,15 @@ fn main() {
                     shared::write_message(&stream, Message::Welcome(Welcome { version: 1 })).expect("Failed to send welcome message");
                 }
                 Message::Subscribe(subscribe) => unsafe {
-                    let public_player = create_player(subscribe.name, &mut PUBLIC_PLAYERS, stream.try_clone().unwrap(), &mut PUBLIC_PLAYERS_TCPSTREAM);
+                    let public_player = create_player(subscribe.name, &mut PUBLIC_PLAYERS, stream.try_clone().unwrap(), &mut PUBLIC_PLAYERS_TCP_STREAM);
                     shared::write_message(&stream, public_player).expect("Failed to send SubscribeResult message to client");
                     if PUBLIC_PLAYERS.len() >= 2 {
-                        shared::write_message(&stream, Message::PublicLeaderBoard(PublicLeaderBoard(PUBLIC_PLAYERS.clone()))).expect("Failed to send PublicLeaderBoard message to clients");
+                        send_to_all_players(Message::PublicLeaderBoard(PublicLeaderBoard(PUBLIC_PLAYERS.clone())));
                         let random_player = get_random_next_player(PUBLIC_PLAYERS.clone());
-                        let random_player_stream = PUBLIC_PLAYERS_TCPSTREAM.iter().find(|player| player.player.stream_id == random_player.stream_id);
+                        let random_player_stream = PUBLIC_PLAYERS_TCP_STREAM.iter().find(|player| player.player.stream_id == random_player.stream_id);
                         let random_player_stream = random_player_stream.unwrap().stream.try_clone().unwrap();
-                        handle_player_challenge(random_player_stream, 0);
+                        handle_player_challenge(random_player_stream, 0, vec![]);
+                        break;
                     }
                 }
                 _ => {}
@@ -61,12 +62,24 @@ fn main() {
         }
     }
 
-    unsafe fn handle_player_challenge(stream: TcpStream, mut played_challenges: usize) {
+    unsafe fn handle_player_challenge(stream: TcpStream, mut played_challenges: usize, mut reported_challenges: Vec<ReportedChallengeResult>) {
+        println!("played_challenges : {}", played_challenges);
+        println!("Stream address: {}", stream.peer_addr().unwrap());
         if played_challenges >= 3 {
-            shared::write_message(&stream, Message::EndOfGame(EndOfGame { leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()) })).expect("Failed to send EndOfGame message to client");
+            send_to_all_players(Message::EndOfGame(EndOfGame { leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()) }));
             return;
         }
 
+        let current_player_address: String;
+        match stream.peer_addr() {
+            Ok(address) => current_player_address = address.to_string(),
+            Err(_err) => panic!("Failed to get peer address")
+        };
+        let current_player: PublicPlayer;
+        match get_current_player(current_player_address.clone()) {
+            Some(player) => { current_player = player;}
+            None => { panic!("Failed to get current player") }
+        };
         let current_challenge: Challenges;
         let mut rng = rand::thread_rng();
         let challenge_index: usize = rng.gen_range(0..1);
@@ -82,7 +95,7 @@ fn main() {
             1 => {
                 let challenge_input = MonstrousMazeInput {
                     endurance: 10,
-                    grid: "".to_string(),
+                    grid: "|I   X|".to_string(),
                 };
                 current_challenge = MonstrousMazeChallengeEnum(MonstrousMazeChallenge::new(challenge_input.clone()));
                 shared::write_message(&stream, Message::Challenge(MonstrousMaze(challenge_input))).expect("Failed to send Challenge message to client");
@@ -110,16 +123,21 @@ fn main() {
                     }
                     let current_challenge = MD5HashCashChallenge::new(challenge_input.clone());
                     let success = current_challenge.verify(&hash_cash_answer);
+                    reported_challenges.push(ReportedChallengeResult {
+                        name: MD5HashCashChallenge::name(),
+                        value: generate_challenge_value(success, current_challenge_used_time, current_player.name.clone()),
+                    });
                     match update_player_in_player_list(success, stream.peer_addr().unwrap().to_string(), current_challenge_used_time) {
                         Some(current_player) => {
                             match get_next_player(challenge_result.clone(), PUBLIC_PLAYERS.clone()) {
                                 Some(next_player) => {
                                     println!("Current player name : {}\n Next player name : {}", current_player.name, next_player.name);
-                                    send_round_summarize(&stream, MD5HashCashChallenge::name(), current_challenge_used_time, current_player.clone().name);
+                                    send_round_summarize(MD5HashCashChallenge::name(), reported_challenges.clone());
                                     played_challenges += 1;
-                                    let next_player_stream = PUBLIC_PLAYERS_TCPSTREAM.iter().find(|player| player.player.stream_id == next_player.stream_id);
+                                    let next_player_stream = PUBLIC_PLAYERS_TCP_STREAM.iter().find(|player| player.player.stream_id == next_player.stream_id);
                                     let next_player_stream = next_player_stream.unwrap().stream.try_clone().unwrap();
-                                    handle_player_challenge(next_player_stream, played_challenges);
+                                    println!("Next player stream address: {}", next_player_stream.peer_addr().unwrap());
+                                    return handle_player_challenge(next_player_stream, played_challenges, reported_challenges.clone());
                                 }
                                 None => {
                                     println!("No more players ???");
@@ -144,16 +162,20 @@ fn main() {
                     }
                     let current_challenge = MonstrousMazeChallenge::new(challenge_input.clone());
                     let success = current_challenge.verify(&monstrous_maze_answer);
+                    reported_challenges.push(ReportedChallengeResult {
+                        name: MD5HashCashChallenge::name(),
+                        value: generate_challenge_value(success, current_challenge_used_time, current_player.name.clone()),
+                    });
                     match update_player_in_player_list(success, stream.peer_addr().unwrap().to_string(), current_challenge_used_time) {
                         Some(current_player) => {
                             match get_next_player(challenge_result.clone(), PUBLIC_PLAYERS.clone()) {
                                 Some(next_player) => {
                                     println!("Current player name : {}\n Next player name : {}", current_player.name, next_player.name);
-                                    send_round_summarize(&stream, MonstrousMazeChallenge::name(), current_challenge_used_time, current_player.clone().name);
+                                    send_round_summarize(MonstrousMazeChallenge::name(), reported_challenges.clone());
                                     played_challenges += 1;
-                                    let next_player_stream = PUBLIC_PLAYERS_TCPSTREAM.iter().find(|player| player.player.stream_id == next_player.stream_id);
+                                    let next_player_stream = PUBLIC_PLAYERS_TCP_STREAM.iter().find(|player| player.player.stream_id == next_player.stream_id);
                                     let next_player_stream = next_player_stream.unwrap().stream.try_clone().unwrap();
-                                    handle_player_challenge(next_player_stream, played_challenges);
+                                    return handle_player_challenge(next_player_stream, played_challenges, reported_challenges.clone());
                                 }
                                 None => {
                                     println!("No more players ???");
@@ -168,6 +190,27 @@ fn main() {
                 }
             },
             _ => {}
+        }
+    }
+    unsafe fn get_current_player(address: String) -> Option<PublicPlayer> {
+        let current_player = PUBLIC_PLAYERS.iter().find(|player| player.stream_id == address)?;
+        return Some(current_player.clone());
+    }
+    fn generate_challenge_value(success: bool, used_time: f64, current_player_name: String) -> ChallengeValue {
+        if success {
+            ChallengeValue::Ok {
+                0: Ok {
+                    used_time,
+                    next_target: current_player_name,
+                },
+            }
+        } else {
+            ChallengeValue::BadResult {
+                0: BadResult {
+                    used_time,
+                    next_target: current_player_name,
+                },
+            }
         }
     }
 
@@ -235,20 +278,16 @@ fn main() {
         return active_players[random_index].clone();
     }
 
-    fn send_round_summarize(stream: &TcpStream, challenge_name: String, used_time: f64, current_player_name: String) {
-        shared::write_message(stream, Message::RoundSummary(RoundSummary {
+    unsafe fn send_to_all_players(message: Message) {
+        PUBLIC_PLAYERS_TCP_STREAM.iter_mut().for_each(|public_player_tcp_stream| {
+            shared::write_message(&public_player_tcp_stream.stream, message.clone()).expect("Failed to send PublicLeaderBoard message to clients");
+        });
+    }
+
+    unsafe fn send_round_summarize(challenge_name: String, reported_challenges: Vec<ReportedChallengeResult>) {
+        send_to_all_players(Message::RoundSummary(RoundSummary {
             challenge: challenge_name,
-            chain: vec![
-                ReportedChallengeResult {
-                    name: "free_potato".to_string(),
-                    value: ChallengeValue::Ok {
-                        0: Ok {
-                            used_time,
-                            next_target: current_player_name,
-                        },
-                    },
-                },
-            ],
-        })).expect("Error while writing RoundSummary message to client");
+            chain: reported_challenges.clone()
+        }));
     }
 }

@@ -5,29 +5,29 @@ use std::net::TcpStream;
 use std::str::{from_utf8};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Welcome {
     pub version: u8,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Subscribe {
     pub name: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SubscribeResult {
     Ok,
     Err(SubscribeError)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SubscribeError {
     AlreadyRegistered,
     InvalidName
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PublicLeaderBoard (
     pub Vec<PublicPlayer>
 );
@@ -83,19 +83,19 @@ pub struct MonstrousMazeOutput {
     pub path: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RoundSummary {
     pub challenge: String,
     pub chain: Vec<ReportedChallengeResult>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReportedChallengeResult {
     pub name: String,
     pub value: ChallengeValue,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ChallengeValue {
     Unreachable,
     Timeout,
@@ -103,24 +103,24 @@ pub enum ChallengeValue {
     Ok(Ok),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BadResult {
     pub used_time: f64,
     pub next_target: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Ok {
     pub used_time: f64,
     pub next_target: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EndOfGame {
     pub leader_board: PublicLeaderBoard,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Message {
     Hello,
     Welcome(Welcome),
@@ -162,6 +162,7 @@ fn serialize_message(message : Message) -> serde_json::Result<String> {
 }
 
 pub fn read_message(mut stream: &TcpStream) -> String {
+    println!("Reading message from stream {}", stream.peer_addr().unwrap());
     let mut data = [0 as u8; 4];
     match stream.read_exact(&mut data) {
         Ok(_) => {

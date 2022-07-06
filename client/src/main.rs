@@ -84,6 +84,3 @@ fn next_target(public_leader_board: &Vec<PublicPlayer>) -> String {
     let mut rng = rand::thread_rng();
     return public_leader_board[rng.gen_range(0..public_leader_board.len())].name.to_string();
 }
-
-
-
