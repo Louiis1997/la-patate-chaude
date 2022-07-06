@@ -1,10 +1,8 @@
-mod hash_cash;
-mod monstrous_maze;
-
 use rand::Rng;
 use clap::Parser;
 use shared::{ChallengeAnswer, ChallengeResult, Message, PublicPlayer, Subscribe, SubscribeResult};
 use shared::Challenge::{MD5HashCash, MonstrousMaze};
+use shared::challenges::{Challenge, MD5HashCash as MD5HashCashChallenge, MonstrousMaze as MonstrousMazeChallenge};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -43,20 +41,22 @@ fn main() {
                             Message::Challenge(response) => {
                                 match response {
                                     MD5HashCash(md5_hash_cash_input) => {
+                                        let challenge = MD5HashCashChallenge::new(md5_hash_cash_input);
                                         shared::send_message(&mut stream, Message::ChallengeResult(
                                             ChallengeResult {
                                                 answer: ChallengeAnswer::MD5HashCash {
-                                                    0: hash_cash::solve_md5(md5_hash_cash_input),
+                                                    0: MD5HashCashChallenge::solve(&challenge),
                                                 },
                                                 next_target: next_target(&public_leader_board)
                                             }
                                         ));
                                     },
                                     MonstrousMaze(monstrous_maze_input) => {
+                                        let challenge = MonstrousMazeChallenge::new(monstrous_maze_input);
                                         shared::send_message(&mut stream, Message::ChallengeResult(
                                             ChallengeResult {
                                                 answer: ChallengeAnswer::MonstrousMaze {
-                                                    0: monstrous_maze::solve_monstrous_maze(monstrous_maze_input),
+                                                    0: MonstrousMazeChallenge::solve(&challenge),
                                                 },
                                                 next_target: next_target(&public_leader_board)
                                             }

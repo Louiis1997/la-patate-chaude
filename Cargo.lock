@@ -75,7 +75,6 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "clap",
- "md5",
  "rand",
  "serde_json",
  "shared",
@@ -282,6 +281,7 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
+ "md5",
  "serde",
  "serde_json",
 ]

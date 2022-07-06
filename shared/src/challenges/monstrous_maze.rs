@@ -1,14 +1,14 @@
-use shared::{MonstrousMazeInput, MonstrousMazeOutput};
+use crate::MonstrousMazeInput;
 
-struct Grid {
-    grid: Vec<String>,
-    start: (u64, u64),
-    end: (u64, u64),
-    endurance: u8,
+pub struct Grid {
+    pub grid: Vec<String>,
+    pub start: (u64, u64),
+    pub end: (u64, u64),
+    pub endurance: u8,
 }
 
 impl Grid {
-    fn new(input: MonstrousMazeInput) -> Grid {
+    pub fn new(input: MonstrousMazeInput) -> Grid {
         let split_grid = input.grid.split("\n").collect::<Vec<&str>>().iter().map(|line| line.to_string()).collect::<Vec<String>>();
         let grid_start = Grid::find_start_coordinates(&split_grid);
         let grid_end = Grid::find_end_coordinates(&split_grid);
@@ -42,12 +42,12 @@ impl Grid {
     }
 }
 
-struct GridPossibleSolution {
-    current_coordinates: (i64, i64),
-    path_taken: String,
-    visited_coordinates: Vec<(i64, i64)>,
-    success: bool,
-    endurance_left: i8,
+pub struct GridPossibleSolution {
+    pub current_coordinates: (i64, i64),
+    pub path_taken: String,
+    pub visited_coordinates: Vec<(i64, i64)>,
+    pub success: bool,
+    pub endurance_left: i8,
 }
 
 const START_CHARACTER: char = 'I';
@@ -55,56 +55,8 @@ const END_CHARACTER: char = 'X';
 const MONSTER_CHARACTER: char = 'M';
 const FREE_WAY_CHARACTER: char = ' ';
 
-pub fn solve_monstrous_maze(input: MonstrousMazeInput) -> MonstrousMazeOutput {
-    let mut final_output = MonstrousMazeOutput {
-        path: "".to_string(),
-    };
-
-    let mut grid: Grid = Grid::new(input);
-    println!("Grid start: {:?}", grid.start);
-    println!("Grid end: {:?}", grid.end);
-
-    let grid_possible_solution: GridPossibleSolution = GridPossibleSolution {
-        path_taken: "".to_string(),
-        current_coordinates: (grid.start.0 as i64, grid.start.1 as i64),
-        visited_coordinates: vec![],
-        success: false,
-        endurance_left: grid.endurance as i8,
-    };
-
-    let possible_solutions = find_paths(&mut grid, grid_possible_solution);
-
-    let no_solution_because_died = possible_solutions.iter().all(|solution| solution.endurance_left <= 0);
-    if no_solution_because_died {
-        println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
-        return final_output;
-    }
-
-    // Filter successful & not empty paths
-    let successful_paths: Vec<&GridPossibleSolution> = possible_solutions
-        .iter()
-        .filter(|path| path.success && !path.path_taken.is_empty())
-        .collect::<Vec<&GridPossibleSolution>>();
-
-    if successful_paths.len() == 0 {
-        println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
-        return final_output;
-    }
-
-    // Display found paths
-    // println!("Found paths:");
-    // for path in &successful_paths {
-    //     println!("path {:?} - endurance: {} - success: {}", &path.path_taken, &path.endurance_left, &path.success);
-    // }
-
-    let best_path: &GridPossibleSolution = get_best_path(successful_paths);
-    final_output.path = best_path.path_taken.clone();
-
-    return final_output;
-}
-
 /// Get best path by used endurance and path length
-fn get_best_path(filtered_possible_solutions: Vec<&GridPossibleSolution>) -> &GridPossibleSolution {
+pub fn get_best_path(filtered_possible_solutions: Vec<&GridPossibleSolution>) -> &GridPossibleSolution {
     return filtered_possible_solutions
         .iter()
         .min_by(|a, b| {
@@ -116,7 +68,7 @@ fn get_best_path(filtered_possible_solutions: Vec<&GridPossibleSolution>) -> &Gr
         .unwrap()
 }
 
-fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolution) -> Vec<GridPossibleSolution> {
+pub fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolution) -> Vec<GridPossibleSolution> {
     if grid_possible_solution.visited_coordinates.contains(&grid_possible_solution.current_coordinates) {
         return vec![];
     }
