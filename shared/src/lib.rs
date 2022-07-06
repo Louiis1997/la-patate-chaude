@@ -162,7 +162,6 @@ fn serialize_message(message : Message) -> serde_json::Result<String> {
 }
 
 pub fn read_message(mut stream: &TcpStream) -> String {
-    println!("Reading message from stream {}", stream.peer_addr().unwrap());
     let mut data = [0 as u8; 4];
     match stream.read_exact(&mut data) {
         Ok(_) => {

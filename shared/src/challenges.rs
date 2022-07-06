@@ -6,6 +6,7 @@ use crate::{MD5HashCashInput, MD5HashCashOutput, MonstrousMazeInput, MonstrousMa
 use crate::challenges::hash_cash::{complete_hexadecimal_seed_with_zero, generate_seed};
 use crate::challenges::monstrous_maze::{find_paths, get_best_path, Grid, GridPossibleSolution};
 
+#[derive(Debug, Clone)]
 pub enum Challenges {
     MD5HashCash(MD5HashCash),
     MonstrousMaze(MonstrousMaze),
