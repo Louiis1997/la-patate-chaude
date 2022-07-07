@@ -9,7 +9,7 @@ on:
 
 jobs:
 
-  test_phaser:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,18 +17,15 @@ jobs:
       - name: Update local toolchain
         run: |
           rustup update
-          rustup component add clippy
 
       - name: Toolchain info
         run: |
           cargo --version --verbose
           rustc --version
-          cargo clippy --version          
 
       - name: Lint
         run: |
           cargo fmt -- --check
-          cargo clippy -- -D warnings          
 
       - name: Test
         run: |
