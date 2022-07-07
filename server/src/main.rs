@@ -46,45 +46,52 @@ fn main() {
 
     unsafe fn handle_client(stream: &TcpStream) {
         let response = shared::read_message(&stream);
-        let response = serde_json::from_str(&response).unwrap();
         let mut current_challenge: Challenges = get_random_game();
         let reported_challenges: Vec<ReportedChallengeResult> = vec![];
-        match response {
-            Message::Hello => {
-                shared::send_message(&stream, Message::Welcome(Welcome { version: 1 }));
+        match serde_json::from_str(&response) {
+            Ok(response) => {
+                match response {
+                    Message::Hello => {
+                        shared::send_message(&stream, Message::Welcome(Welcome { version: 1 }));
+                    }
+                    Message::Subscribe(subscribe) => {
+                        let public_player = create_player(subscribe.name, &mut PUBLIC_PLAYERS, stream.try_clone().unwrap(), &mut PUBLIC_PLAYERS_TCP_STREAM);
+                        shared::send_message(&stream, public_player);
+                        if PUBLIC_PLAYERS.len() >= 2 {
+                            println!("{}", " ==== Starting game ==== ");
+                            send_to_all_players(Message::PublicLeaderBoard(PublicLeaderBoard(PUBLIC_PLAYERS.clone())));
+                            let random_player = get_random_next_player(PUBLIC_PLAYERS.clone());
+                            let random_player_stream = PUBLIC_PLAYERS_TCP_STREAM.iter().find(|player| player.player.stream_id == random_player.stream_id);
+                            let random_player_stream = random_player_stream.unwrap().stream.try_clone().unwrap();
+                            current_challenge = launch_game(current_challenge.clone(), random_player_stream);
+                        }
+                    },
+                    Message::ChallengeResult(challenge_result) => {
+                        let current_player_address: String;
+                        match stream.try_clone().unwrap().peer_addr() {
+                            Ok(address) => current_player_address = address.to_string(),
+                            Err(_err) => panic!("Failed to get peer address")
+                        };
+                        let current_player: PublicPlayer;
+                        match get_current_player(current_player_address.clone()) {
+                            Some(player) => { current_player = player; }
+                            None => { panic!("Failed to get current player") }
+                        };
+                        let next_player_stream = handle_client_challenge_response(&stream, current_player, current_challenge, challenge_result, reported_challenges);
+                        NB_PLAYED_CHALLENGES += 1;
+                        if NB_PLAYED_CHALLENGES >= 3 {
+                            send_to_all_players(Message::EndOfGame(EndOfGame { leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()) }));
+                            println!("{}", " ==== The End ==== ");
+                            process::exit(0);
+                        }
+                        launch_game(get_random_game(), next_player_stream);
+                    },
+                    _ => {}
+                }
             }
-            Message::Subscribe(subscribe) => {
-                let public_player = create_player(subscribe.name, &mut PUBLIC_PLAYERS, stream.try_clone().unwrap(), &mut PUBLIC_PLAYERS_TCP_STREAM);
-                shared::send_message(&stream, public_player);
-                if PUBLIC_PLAYERS.len() >= 2 {
-                    println!("{}", " ==== Starting game ==== ");
-                    send_to_all_players(Message::PublicLeaderBoard(PublicLeaderBoard(PUBLIC_PLAYERS.clone())));
-                    let random_player = get_random_next_player(PUBLIC_PLAYERS.clone());
-                    let random_player_stream = PUBLIC_PLAYERS_TCP_STREAM.iter().find(|player| player.player.stream_id == random_player.stream_id);
-                    let random_player_stream = random_player_stream.unwrap().stream.try_clone().unwrap();
-                    current_challenge = launch_game(current_challenge.clone(), random_player_stream);
-                }
-            },
-            Message::ChallengeResult(challenge_result) => {
-                let current_player_address: String;
-                match stream.try_clone().unwrap().peer_addr() {
-                    Ok(address) => current_player_address = address.to_string(),
-                    Err(_err) => panic!("Failed to get peer address")
-                };
-                let current_player: PublicPlayer;
-                match get_current_player(current_player_address.clone()) {
-                    Some(player) => { current_player = player; }
-                    None => { panic!("Failed to get current player") }
-                };
-                let next_player_stream = handle_client_challenge_response(&stream, current_player, current_challenge, challenge_result, reported_challenges);
-                NB_PLAYED_CHALLENGES += 1;
-                if NB_PLAYED_CHALLENGES >= 3 {
-                    send_to_all_players(Message::EndOfGame(EndOfGame { leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()) }));
-                    process::exit(0);
-                }
-                launch_game(get_random_game(), next_player_stream);
-            },
-            _ => {}
+            Err(err) => {
+                panic!("Failed to deserialize the message received: {}", err)
+            }
         }
     }
 
