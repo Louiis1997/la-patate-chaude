@@ -37,7 +37,6 @@ fn main() {
         thread::spawn(move || unsafe {
             handle_client(&stream);
         });
-        println!("caca");
     }
 
     unsafe fn handle_client(stream: &TcpStream) {

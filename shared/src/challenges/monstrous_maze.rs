@@ -78,7 +78,39 @@ impl Challenge for MonstrousMaze {
     }
 
     fn verify(&self, answer: &Self::Output) -> bool {
-        println!("{:?}", answer);
+        if answer.path.is_empty() {
+            return false;
+        }
+        let mut endurance_left = self.input.endurance as i8;
+        let grid: Grid = Grid::new(self.input.clone());
+        let mut current_coordinates = (grid.start.0 as i64, grid.start.1 as i64);
+
+        for character in answer.path.chars() {
+            let next_coordinates = match character {
+                '^' => (current_coordinates.0, current_coordinates.1 - 1),
+                'V' => (current_coordinates.0, current_coordinates.1 + 1),
+                '<' => (current_coordinates.0 - 1, current_coordinates.1),
+                '>' => (current_coordinates.0 + 1, current_coordinates.1),
+                _ => panic!("Invalid character in path"),
+            };
+            if is_coordinates_in_grid(next_coordinates, &grid) {
+                current_coordinates = next_coordinates;
+                let current_line: String = grid.grid[current_coordinates.0 as usize].clone();
+                let current_char: char = current_line.chars().nth(current_coordinates.1 as usize).unwrap() as char;
+                if current_char == MONSTER_CHARACTER {
+                    endurance_left -= 1;
+                }
+                else if current_char == END_CHARACTER && current_coordinates == (grid.end.0 as i64, grid.end.1 as i64) {
+                    return endurance_left > 0;
+                }
+                else if current_char != ' ' {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+
         return true;
     }
 }
@@ -264,9 +296,25 @@ fn is_coordinates_in_grid(coordinates: (i64, i64), grid: &Grid) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
+mod monstrous_maze_tests {
+    use crate::challenges::Challenge;
+    use crate::challenges::monstrous_maze::MonstrousMaze;
+    use crate::MonstrousMazeInput;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn monstrous_maze_challenge() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            endurance: 10,
+            grid:"|I|\n\
+                 | |\n\
+                 | |\n\
+                 |X|\n".to_string(),
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let expected_path = "vvv".to_string();
+        let output = monstrous_maze_challenge.solve();
+        let found_path = output.path;
+
+        assert_eq!(found_path, expected_path);
     }
 }
