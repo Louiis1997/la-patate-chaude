@@ -24,8 +24,8 @@ impl Challenge for MonstrousMaze {
         };
 
         let mut grid: Grid = Grid::new(self.input.clone());
-        println!("Grid start: {:?}", grid.start);
-        println!("Grid end: {:?}", grid.end);
+        // println!("Grid start: {:?}", grid.start);
+        // println!("Grid end: {:?}", grid.end);
 
         let grid_possible_solution: GridPossibleSolution = GridPossibleSolution {
             path_taken: "".to_string(),
@@ -38,9 +38,12 @@ impl Challenge for MonstrousMaze {
         let possible_solutions = find_paths(&mut grid, grid_possible_solution);
         match possible_solutions {
             Some(solutions) => {
-                let no_solution_because_died = solutions
-                    .iter()
-                    .all(|solution| solution.endurance_left <= 0);
+                if solutions.len() == 0 {
+                    println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
+                    return final_output;
+                }
+
+                let no_solution_because_died = solutions.iter().all(|solution| solution.endurance_left <= 0);
                 if no_solution_because_died {
                     println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
                     return final_output;
@@ -89,11 +92,14 @@ impl Challenge for MonstrousMaze {
         let mut current_coordinates = (grid.start.0 as i64, grid.start.1 as i64);
 
         for character in answer.path.chars() {
+            if endurance_left <= 0 {
+                return false;
+            }
             let next_coordinates = match character {
-                '^' => (current_coordinates.0, current_coordinates.1 - 1),
-                'V' => (current_coordinates.0, current_coordinates.1 + 1),
-                '<' => (current_coordinates.0 - 1, current_coordinates.1),
-                '>' => (current_coordinates.0 + 1, current_coordinates.1),
+                '<' => (current_coordinates.0, current_coordinates.1 - 1),
+                '>' => (current_coordinates.0, current_coordinates.1 + 1),
+                '^' => (current_coordinates.0 - 1, current_coordinates.1),
+                'v' => (current_coordinates.0 + 1, current_coordinates.1),
                 _ => panic!("Invalid character in path"),
             };
             if is_coordinates_in_grid(next_coordinates, &grid) {
@@ -109,7 +115,7 @@ impl Challenge for MonstrousMaze {
                     && current_coordinates == (grid.end.0 as i64, grid.end.1 as i64)
                 {
                     return endurance_left > 0;
-                } else if current_char != ' ' {
+                } else if current_char != FREE_WAY_CHARACTER {
                     return false;
                 }
             } else {
@@ -206,7 +212,7 @@ pub fn find_paths(
         return Some(vec![]);
     }
     if grid_possible_solution.endurance_left <= 0 {
-        return Some(vec![]);
+        return Some(vec![grid_possible_solution]);
     }
 
     grid_possible_solution
@@ -247,7 +253,7 @@ pub fn find_paths(
 
         Some(all_paths)
     } else {
-        Some(paths)
+        Some(vec![])
     }
 }
 
@@ -365,25 +371,189 @@ fn is_coordinates_in_grid(coordinates: (i64, i64), grid: &Grid) -> bool {
 
 #[cfg(test)]
 mod monstrous_maze_tests {
-    use crate::challenges::monstrous_maze::MonstrousMaze;
     use crate::challenges::Challenge;
-    use crate::MonstrousMazeInput;
+    use crate::challenges::monstrous_maze::MonstrousMaze;
+    use crate::{MonstrousMazeInput, MonstrousMazeOutput};
 
     #[test]
-    fn monstrous_maze_challenge() {
+    fn simple_maze_without_monster_and_low_complexity_should_find_path() {
         let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
-            endurance: 10,
-            grid: "|I|\n\
-                 | |\n\
-                 | |\n\
-                 |X|\n"
-                .to_string(),
+            endurance: 1,
+            grid: "┌─┐\n\
+                   |I|\n\
+                   | |\n\
+                   | |\n\
+                   |X|\n\
+                   └─┘".to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = "vvv".to_string();
         let output = monstrous_maze_challenge.solve();
+        let verify_output = monstrous_maze_challenge.verify(&output);
         let found_path = output.path;
 
         assert_eq!(found_path, expected_path);
+        assert_eq!(verify_output, true);
+    }
+
+    #[test]
+    fn simple_maze_without_possible_path_should_find_no_path() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            endurance: 1,
+            grid: "┌─┐\n\
+                   |I|\n\
+                   | |\n\
+                   |─|\n\
+                   | |\n\
+                   |X|\n\
+                   └─┘".to_string(),
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let expected_path = "".to_string();
+        let output = monstrous_maze_challenge.solve();
+        let verify_output = monstrous_maze_challenge.verify(&output);
+        let found_path = output.path;
+
+        assert_eq!(found_path, expected_path);
+        assert_eq!(verify_output, false);
+    }
+
+    #[test]
+    fn simple_maze_with_monster_should_find_path() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            endurance: 2,
+            grid: "┌─┐\n\
+                   |I|\n\
+                   | |\n\
+                   |M|\n\
+                   | |\n\
+                   |X|\n\
+                   └─┘".to_string(),
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let expected_path = "vvvv".to_string();
+        let output = monstrous_maze_challenge.solve();
+        let verify_output = monstrous_maze_challenge.verify(&output);
+        let found_path = output.path;
+
+        assert_eq!(found_path, expected_path);
+        assert_eq!(verify_output, true);
+    }
+
+    #[test]
+    fn simple_maze_with_monsters_should_find_no_paths_since_no_more_endurance() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            endurance: 2,
+            grid: "┌─┐\n\
+                   |I|\n\
+                   |M|\n\
+                   |M|\n\
+                   |X|\n\
+                   └─┘".to_string(),
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let expected_path = "".to_string();
+        let output = monstrous_maze_challenge.solve();
+        let verify_output = monstrous_maze_challenge.verify(&output);
+        let found_path = output.path;
+
+        assert_eq!(found_path, expected_path);
+        assert_eq!(verify_output, false);
+    }
+
+    #[test]
+    fn simple_maze_with_monsters_should_find_paths_by_avoiding_monsters() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            endurance: 2,
+            grid: "┌───┐\n\
+                   |I  |\n\
+                   |M  |\n\
+                   |M  |\n\
+                   |X  |\n\
+                   └───┘".to_string(),
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let expected_path = ">vv<v".to_string();
+        let output = monstrous_maze_challenge.solve();
+        let verify_output = monstrous_maze_challenge.verify(&output);
+        let found_path = output.path;
+
+        assert_eq!(found_path, expected_path);
+        assert_eq!(verify_output, true);
+    }
+
+    #[test]
+    fn really_hard_maze_with_monsters_should_find_path() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            grid: "│I────┬─────────┬─┬─────┬───┬───────┬───────────┬─────────────┬───┬─┬─┬─────┬───┬─┬─┬───┬─────┬───────────┬─────┬─┬───┬───┬─────┬───────────────────┬───┬─┬─┬─┬─┬─┬───┬───┬─┬─┬───┬───────────┬─┬───┬───┐\n\
+                   │     │         │ │     │   │       │           │             │   │ │ │     │   │ │ │   │     │           │     │ │   │   │     │                   │   │ │ │ │ │ │   │   │ │ │   │           │ │   │   │\n\
+                   ├── ──┴─┬── ────┘ │ ────┼─┐ ├── ──┬─┴─┬─┐ ──┬── │ │ ──┬──── ──┘ ┌─┘ │ └── ──┼── │ │ ├── ├── ──┘ ┌─┐ ──┬── │ ┌── │ │ ──┘ │ │ ────┼─────┐ ┌──────── ──┴── │ │ │ │ │ │ ┌─┴── │ │ ├── │ ┌──── ┌── │ │ ──┘ ──┤\n\
+                   │       │               │ │ │     │   │ │   │     │   │         │           │       │   │       │ │   │   │ │   │       │       │     │ │                   │     │ │         │     │     │     │       │\n\
+                   │ ┌─┬───┴─┬── │ ┌── ┌── │ │ └─┐ ──┼── │ ├── ├─┐ │ │ ┌─┴─┬─┬─┐ ──┴─────┬─┬─┐ └── ┌───┘ ┌─┴───┬─┐ │ ├─┐ └─┬─┼─┘ │ │ ┌─┐ ┌─┘ ────┬─┘ ┌───┴─┘ ┌──── ──┐ ────┐ ┌─┤ ┌─┬─┘ │ │ ┌─────┴── ──┴─┬── │ ──┬─┼── ────┤\n\
+                   │ │ │     │   │ │   │   │     │   │   │ │   │ │ │ │ │   │ │ │         │ │ │     │     │     │ │   │ │   │ │   │   │ │ │       │   │       │       │     │ │ │ │ │     │ │             │   │   │ │       │\n\
+                   │ │ │ ──┐ ├───┤ └─┬─┤ │ ├── │ │ │ │ ──┘ ├── │M└─┘ ├─┴── │ │ │ │ │ ──┐ │ │ │ ┌── └──── ├───┐ │ │ │ │ └───┘ ├── ├─┬─┘ │ ├─┬── ──┤ │ │ ──┐ ──┤ ────┐ │ │ │ │ │ │ │ │ ────┼─┼──── │ ┌─┐ │ ├───┘ │ │ │ │ ┌── │\n\
+                   │   │   │ │   │   │ │ │ │   │   │ │     │   │     │           │ │   │ │     │         │   │     │ │       │   │ │     │ │     │ │     │   │     │ │ │ │ │ │           │ │     │ │ │ │ │     │   │ │ │   │\n\
+                   │ ──┘ │ │ │ ──┴─┐ │ └─┘ │ ┌─┘ ┌─┘ │ ──┐ │ │ ├───┬─┴─┬── │ │ │ ├─┘ ┌─┘ │ │ │ └─┬── ┌───┘ ┌─┴─┐ │ ├─┤ ┌── ┌─┴─┐ │ │ ┌─┐ │ ├─┐ ┌─┴─┴─────┴── ├─────┤ ├─┤ │ └─┼─┬── ┌──── │ │ ────┤ │ └─┴─┴─┬───┴───┴─┤ └───┤\n\
+                   │     │ │       │ │       │   │   │   │ │ │ │   │   │   │ │ │ │   │     │ │   │   │     │   │ │ │ │ │   │   │ │   │ │ │ │ │ │             │     │ │ │ │   │ │   │       │     │         │         │     │\n\
+                   ├── ┌─┴─┴─┐ ──┐ └─┴─┐ │ ──┼─┬─┴── │ ──┼─┴─┼─┘ ──┤ ┌─┤ ┌─┼─┴─┘ └───┤ ──┐ └─┼───┘ │ │ ┌───┤ ┌─┘ │ │ └─┴── │ ┌─┼─┤ ──┘ │ │ │ └─┼───┐ ┌─┬── ──┘ │ │ ├─┤ └─┼───┘ └─┐ └─┬─┐ ┌─┘ │ ──┤ ──┬─┐ ┌─┘ ──────┬─┼─┐ │ │\n\
+                   │   │     │   │     │ │   │ │         │   │     │ │ │ │ │         │   │   │     │   │   │ │   │           │ │ │     │       │   │ │ │       │ │ │ │   │       │   │ │ │   │   │   │ │ │         │ │ │ │ │\n\
+                   │ │ └── ┌─┴───┴── ──┘ │ ──┤ │ ──┬─┐ ──┘ ──┴── │ │ │ └─┤ └── ──┐ ┌─┼───┤ ┌─┴──── │ │ │ │ │ ├─┐ ├── ──┬───┬─┘ │ │ ┌─┐ ├── ──┐ │ ──┘ │ └───┐ │ └─┤ │ ├── │ ──┐ ──┴─┬─┘ │ │ ┌─┤ ┌─┘ ──┘ │ │ │ ┌── │ │ │ └─┘ │\n\
+                   │ │     │             │   │     │ │           │       │       │ │ │   │ │       │ │ │ │   │ │ │     │   │   │   │ │ │     │             │ │   │   │   │   │     │     │ │ │ │       │   │ │   │ │       │\n\
+                   ├─┤ ────┤ ┌──── │ ──┐ │ ──┼── ┌─┘ └───┐ ┌─┐ │ ├──── │ ├─┐ ┌── ├─┘ │ │ │ └───┐ ┌─┴─┴─┘ │ ──┘ └─┤ ──┐ └─┐ │ │ ├───┘ │ ├─┬───┴─┬── ──┐ │ │ ├─┤ ──┴───┘ │ └─┬─┘ ──┐ ├─┐ ┌─┼─┘ │ ├───┐ ┌─┘ ┌─┴─┤ ┌─┼─┴───┬── │\n\
+                   │ │     │ │     │   │ │   │   │       │ │ │ │ │     │ │ │ │   │     │ │     │ │       │       │   │   │   │ │       │ │     │     │ │ │ │ │         │   │     │ │ │ │ │   │ │   │ │   │   │ │ │     │   │\n\
+                   │ └─┐ ┌─┤ ├──── │ │ │ └─┐ ├─┐ │ ┌───┬─┘ │ └─┼─┴──── │ │ │ ├── ├───┐ └─┘ │ ──┼─┘ ┌─┬── ├───┐ ┌─┘ ┌─┴── └── └─┴─┐ ──┐ │ ├── │ └── │ ├─┴─┘ │ ├─┬───┬───┼───┤ ┌── └─┘ │ │ └─┐ │ │ │ ├─┤ ┌─┼─┐ │ │ │ ──┐ │ │ │\n\
+                   │   │ │ │ │     │ │ │   │ │ │   │   │   │   │       │ │   │   │   │     │   │   │ │   │   │ │   │             │   │   │   │     │ │       │ │   │   │   │ │         │   │ │   │ │ │ │ │ │   │ │   │   │ │\n\
+                   ├─┐ │ │ └─┤ ┌───┤ └─┼─┬─┼─┤ │ │ │ │ └─┬─┘ │ │M┌── ──┤ │ ──┴─┬─┴── │ │ ┌─┼───┴───┘ │ ──┘ ──┤ ├─┬─┴───┬─┐ ──┬─┬─┤ ┌─┼── │ ┌─┴───┬─┘ │ ┌─┬── │ │ ──┘ │ │ │ └─┴── ──┬─┐ │ ──┤ │ │ ├─┘ └─┘ │ ├───┘ │ │ │ │ └─┤\n\
+                   │ │ │     │ │   │   │ │ │ │   │   │   │   │   │     │       │     │ │ │ │         │       │ │ │     │ │   │ │ │ │ │   │ │     │   │ │ │           │ │ │         │ │     │   │ │         │       │ │ │   │\n\
+                   │ │ │ ┌── │ └─┐ │ ──┘ │ │ ├── ├───┴─┬─┼── ├─┐ ├───┬─┴─┐ │ ┌─┤ │ ──┼─┤ │ │ │ ┌─────┼───┬───┤ │ └─┬── │ ├── │ │ └─┘ └───┘ ├───┐ └─┬─┴─┘ └── ────┐ │ │ └─┴── ──┐ ┌─┘ │ ──┬─┘ ──┼─┤ ──┐ │ ──┼── ──┬─┘ ├─┴───┤\n\
+                   │   │ │   │   │       │   │   │     │ │   │ │ │   │   │ │ │ │ │   │ │   │ │ │     │   │   │ │   │     │   │             │   │   │             │ │ │         │ │   │   │     │ │   │ │   │     │   │     │\n\
+                   ├─┐ └─┼── └───┼─┬── │ │ ──┘ ┌─┘ ┌─┬─┤ └───┤ └─┴─┐ └─┐ │ └─┘ └─┤ ┌─┘ │ ──┤ └─┴──── │ ──┤ │ │ │ │ └─┬── ├── ├─┬─┬─┐ ┌─┐ ┌─┤ ──┤ ┌─┘ │ │ ────────┤ └─┴─┐ ──┐ ──┴─┤ ──┼── └── ──┘ ├───┘ │ ──┘ ────┴─┬─┤ │ │ │\n\
+                   │ │   │       │ │   │ │     │   │ │ │     │     │   │ │       │ │       │             │ │     │   │   │   │ │ │ │ │ │ │ │   │ │   │ │         │     │   │     │   │           │     │           │ │ │ │ │\n\
+                   │ │ │ ├── │ ┌─┘ ├───┘ │ ────┘ │ │ │ │ ┌─┐ │ │ │ │ ──┤ └─┐ ┌── │ │ │ ┌── ├─┬── │ ┌─┬───┘ ├──── ├── ├── │ ┌─┤ │ │ │ │ ├─┘ └── │ └───┼─┘ │ ────┬─┼─┬───┴── ├── ┌─┤ │ │ │ │ │ ┌─┐ └──── └───┐ │ ──┬─┘ │ │ └─┤\n\
+                   │   │ │   │ │   │     │       │ │   │ │ │ │ │ │     │   │ │     │ │ │   │ │   │ │ │     │     │   │     │ │         │       │     │   │     │ │ │       │   │ │ │ │ │ │ │ │ │           │ │   │     │   │\n\
+                   │ │ └─┴───┘ │ │ └─┐ ──┤ ┌─┐ ──┴─┼── ├─┘ │ │ └─┼──── │ │ └─┴─┬─┬─┴─┴─┘ ──┤ │ ┌─┼─┘ └─┐ ──┤ │ │ │ │ ├──── │ │ ──┐ ──┬─┘ ┌── ──┘ │ ┌─┘ ──┴─┐ ┌─┘ │ │ ──┬─┐ ├───┘ └─┘ │ ├─┤ └─┘ │ ┌── ──┐ ┌─┴─┘ ──┼── ──┤ ──┤\n\
+                   │ │           │   │   │ │ │     │   │   │ │   │       │     │ │         │   │ │     │   │ │ │ │ │ │           │   │   │       │ │       │ │     │   │ │ │           │ │     │ │     │ │       │     │   │\n\
+                   ├─┘ ──────┬───┤ ──┴───┤ │ │ │ ┌─┘ ──┴── │ │ ──┴─────┐ ├─┬── │ │ ──┬── │ ├── │ └───┐ │ ──┤ ├─┤ │ │ └── │ ──┐ ┌─┴── └─┐ │ ┌───┐ └─┼── ────┴─┴───┐ └── │ ├─┘ ──┬───┐ │ │ │ ──┐ │ │ │ │ │ ├─┐ ──┬─┴─┬─┐ │ ──┤\n\
+                   │         │   │       │ │   │ │         │           │ │ │   │ │   │   │ │   │     │     │ │ │ │ │     │   │ │       │ │ │   │   │             │       │     │   │ │   │   │ │ │ │ │ │ │ │   │   │ │ │   │\n\
+                   │ │ ┌─┐ ──┘ ┌─┘ │ ┌─┬─┴─┼───┘ └── │ ┌───┼──── ──┬── ├─┤ └───┘ ├── ├─┐ │ │ ──┼── │ └──── │ │ ├─┴─┼───┐ │ ┌─┼─┴───┬─┐ ├─┴─┘ ┌─┼─┐ │ │ ──┬── ┌─┐ ├── │ ──┤ ──┐ ├─┐ │ ├───┤ ┌─┴─┴─┴─┤ ├─┴─┤ │ ──┘ │ │ │ └─┬─┤\n\
+                   │ │ │ │     │   │ │ │   │         │ │   │       │   │ │       │   │ │ │     │   │       │   │   │   │ │ │ │     │ │ │     │ │ │   │   │   │ │ │   │   │   │ │ │   │   │ │       │ │   │ │     │ │     │ │\n\
+                   ├─┼─┤ ├─┬── ├───┘ │ └─┐ └── ──┐ ┌─┘ │ ──┘ ┌─────┘ ┌─┘ │ │ ────┤ ──┘ ├─┼── ┌─┴─┬─┼─┐ ──┐ └─┬─┘ ┌─┤ ──┴─┤ │ └─┬─┐ │ │ ├───┐ │ │ └─┐ └─┐ ├───┘ │ ├───┼───┘ │ ├─┘ │ │ │ ──┴─┤ ┌───┐ │ │ ──┤ │ │ ──┤ └─┐ ──┘ │\n\
+                   │ │ │ │ │   │         │       │ │         │       │   │ │     │     │ │   │   │ │ │   │   │   │ │     │     │ │     │   │ │     │   │ │       │   │     │ │     │ │     │ │   │       │ │ │   │   │     │\n\
+                   │ │ │ │ │ ┌─┴───┐ │ ──┤ ┌─────┴─┘ ──┬───┐ ├── ┌── │ │ ├─┘ ┌───┘ │ ┌─┘ ├── │ │ │ │ └── ├─┐ ├── │ │ ────┘ ┌───┘ └─────┴── │ └── ──┤ ┌─┘ ├───┐ ──┘ │ ├── │ ├─┼── ──┼─┼─┐ │ ├─┘ ──┴─────┐ │ │ │ ──┤ │ │ │ │ │\n\
+                   │     │ │ │     │ │   │ │           │   │ │   │   │ │ │   │     │ │   │   │ │         │ │ │             │                       │ │   │   │     │ │   │ │ │     │ │ │ │ │           │ │   │   │ │   │ │ │\n\
+                   │ │ │ │ │ │ ──┐ ├─┘ ──┼─┤ │ ┌── ┌── │ │ ├─┴───┘ ──┼─┘ ├── └── ┌─┘ │ │ │ │ │ │ │ ──┐ ──┤ │ └─────┐ │ │ │ └── ────┬───┐ ┌── ────┬─┴─┤ ──┘ ──┤ │ ──┼─┘ │ └─┘ ├───┬─┘ │ │ ├─┼── ┌──── ┌─┴─┘ │ ├── └─┴─┐ ├─┤ │\n\
+                   │ │ │     │   │ │     │ │ │ │   │   │ │ │         │   │       │   │ │   │   │ │   │   │         │ │ │ │         │   │ │       │   │       │ │   │   │     │   │   │   │ │   │     │     │ │       │ │ │ │\n\
+                   ├─┴─┘ ────┼───┘ └──── │ │ │ │ ┌─┘ │ │ └─┴─────┐ │ └── │ ┌── │ ├── └─┤ ──┤ ──┴─┴─┐ ├── │ │ ──────┼─┘ └─┼── ┌──── └─┐ │ │ ──┬── └── ├── ┌───┘ │ │ │ ┌─┘ ────┘ │ │ │ │ ──┘ │ │ ├── │ │ │ ──┼─┴── ────┤ │ │ │\n\
+                   │         │             │ │ │ │   │           │ │     │ │   │ │     │   │       │ │   │ │       │     │   │       │   │   │       │   │     │ │ │ │         │   │ │       │ │   │   │   │         │ │ M X\n\
+                   └─────────┴─────────────┴─┴─┴─┴───┴───────────┴─┴─────┴─┴───┴─┴─────┴───┴───────┴─┴───┴─┴───────┴─────┴───┴───────┴───┴───┴───────┴───┴─────┴─┴─┴─┴─────────┴───┴─┴───────┴─┴───┴───┴───┴─────────┴─┴────".to_string(),
+            endurance: 10,
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let expected_path = "v>>vv<<vvvvvv>>>>^^^^>>>>vvvv>>>>>>vv>>vv>>>>^^^^>>>>^^>>^^>>vv>>^^>>vvvvvv>>vv>>>>>>>>>>^^>>vv>>>>>>vvvvvv>>^^>>^^^^>>^^>>^^^^^^>>>>>>>>vvvv>>vvvvvvvv<<vvvvvv>>vv<<vv>>vvvv>>vvvvvv>>^^^^>>vv>>>>>>>>^^<<^^>>>>^^<<^^^^>>^^^^>>vv>>>>^^>>vv>>vvvvvv>>>>^^>>>>>>^^>>>>>>^^^^>>>>>>^^^^>>^^>>vv>>>>^^^^>>>>>>>>vvvv>>vv>>>>>>>>^^>>vvvv>>>>>>^^>>>>^^>>>>>>vvvv>>vv>>>>>>>>vv>>>>>>^^^^^^>>vvvv>>>>>>vvvv<<vvvv>>>>^^>>vvvv>>vv>>^^>>>>vvvvvv>".to_string();
+        let output = monstrous_maze_challenge.solve();
+        let verify_output = monstrous_maze_challenge.verify(&output);
+        let found_path = output.path;
+
+        assert_eq!(found_path, expected_path);
+        assert_eq!(verify_output, true);
+    }
+
+    #[test]
+    fn incorrect_output_should_return_false_when_verify() {
+        let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
+            endurance: 2,
+            grid: "┌─┐\n\
+                   |I|\n\
+                   |M|\n\
+                   | |\n\
+                   |X|\n\
+                   └─┘".to_string(),
+        };
+        let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
+        let output: MonstrousMazeOutput = MonstrousMazeOutput {
+            path: "v>vv<".to_string(),
+        };
+        let verify_output = monstrous_maze_challenge.verify(&output);
+        assert_eq!(verify_output, false);
     }
 }
