@@ -95,11 +95,10 @@ pub fn complete_hexadecimal_seed_with_zero(input: String) -> String {
     input.to_uppercase()
 }
 
-
 #[cfg(test)]
 mod hash_cash_tests {
-    use crate::challenges::Challenge;
     use crate::challenges::hash_cash::MD5HashCash;
+    use crate::challenges::Challenge;
     use crate::MD5HashCashInput;
 
     #[test]
