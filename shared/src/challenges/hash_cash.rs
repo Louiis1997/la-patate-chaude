@@ -94,3 +94,45 @@ pub fn complete_hexadecimal_seed_with_zero(input: String) -> String {
     }
     input.to_uppercase()
 }
+
+
+#[cfg(test)]
+mod hash_cash_tests {
+    use crate::challenges::Challenge;
+    use crate::challenges::hash_cash::MD5HashCash;
+    use crate::MD5HashCashInput;
+
+    #[test]
+    fn basic_should_return_correct_seed_by_incrementation() {
+        let hash_cash_input = MD5HashCashInput {
+            message: "hello".to_string(),
+            complexity: 9,
+        };
+
+        let hash_cash_challenge = MD5HashCash::new(hash_cash_input);
+        let output = hash_cash_challenge.solve();
+        let verify_output = hash_cash_challenge.verify(&output);
+        let seed_by_incrementation = output.seed;
+        let expected_seed_by_incrementation = 844 as u64;
+
+        assert_eq!(seed_by_incrementation, expected_seed_by_incrementation);
+        assert_eq!(verify_output, true);
+    }
+
+    #[test] // Takes time
+    fn high_complexity_should_return_correct_seed_by_incrementation() {
+        let hash_cash_input = MD5HashCashInput {
+            message: "My red salad stretches the Bernardo's crazy finger.".to_string(),
+            complexity: 16,
+        };
+
+        let hash_cash_challenge = MD5HashCash::new(hash_cash_input);
+        let output = hash_cash_challenge.solve();
+        let verify_output = hash_cash_challenge.verify(&output);
+        let seed_by_incrementation = output.seed;
+        let expected_seed_by_incrementation = 42676 as u64;
+
+        assert_eq!(seed_by_incrementation, expected_seed_by_incrementation);
+        assert_eq!(verify_output, true);
+    }
+}
