@@ -18,18 +18,18 @@ struct Args {
     )]
     name: String,
     #[clap(
-        short = 'p',
+        short = 'a',
         long,
         required = false,
         default_value = "localhost:7878",
         value_parser
     )]
-    port: String,
+    addr: String,
 }
 
 fn main() {
     let args = Args::parse();
-    let stream = std::net::TcpStream::connect(args.port);
+    let stream = std::net::TcpStream::connect(args.addr);
     match stream {
         Ok(mut stream) => {
             shared::send_message(&mut stream, Message::Hello);
