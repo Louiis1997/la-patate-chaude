@@ -11,11 +11,11 @@ impl Challenge for MonstrousMaze {
     type Output = MonstrousMazeOutput;
 
     fn name() -> String {
-        return "MonstrousMaze".to_string();
+        "MonstrousMaze".to_string()
     }
 
     fn new(input: Self::Input) -> Self {
-        return Self { input };
+        Self { input }
     }
 
     fn solve(&self) -> Self::Output {
@@ -52,7 +52,7 @@ impl Challenge for MonstrousMaze {
                     .filter(|path| path.success && !path.path_taken.is_empty())
                     .collect::<Vec<&GridPossibleSolution>>();
 
-                if successful_paths.len() == 0 {
+                if successful_paths.is_empty() {
                     println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
                     return final_output;
                 }
@@ -72,7 +72,7 @@ impl Challenge for MonstrousMaze {
                     }
                 }
 
-                return final_output;
+                final_output
             }
             None => {
                 panic!("No possible solution found");
@@ -117,7 +117,7 @@ impl Challenge for MonstrousMaze {
             }
         }
 
-        return true;
+        true
     }
 }
 
@@ -132,7 +132,7 @@ impl Grid {
     pub fn new(input: MonstrousMazeInput) -> Grid {
         let split_grid = input
             .grid
-            .split("\n")
+            .split('\n')
             .collect::<Vec<&str>>()
             .iter()
             .map(|line| line.to_string())
@@ -157,7 +157,7 @@ impl Grid {
                 }
             }
         }
-        return start_coordinates;
+        start_coordinates
     }
 
     fn find_start_coordinates(split_grid: &Vec<String>) -> (u64, u64) {
@@ -190,7 +190,7 @@ pub fn get_best_path(
         if a.endurance_left == b.endurance_left {
             return a.path_taken.len().cmp(&b.path_taken.len());
         }
-        return a.endurance_left.cmp(&b.endurance_left);
+        a.endurance_left.cmp(&b.endurance_left)
     })?;
     Some(solution)
 }
@@ -357,10 +357,10 @@ fn is_coordinates_in_grid(coordinates: (i64, i64), grid: &Grid) -> bool {
     let (line_index, column_index) = coordinates;
     let line_count = grid.grid.len();
     let column_count = grid.grid[0].len();
-    return line_index < line_count as i64
+    line_index < line_count as i64
         && column_index < column_count as i64
         && line_index >= 0
-        && column_index >= 0;
+        && column_index >= 0
 }
 
 #[cfg(test)]

@@ -59,9 +59,7 @@ fn main() {
                                     shared::send_message(
                                         &mut stream,
                                         Message::ChallengeResult(ChallengeResult {
-                                            answer: ChallengeAnswer::MD5HashCash {
-                                                0: MD5HashCashChallenge::solve(&challenge),
-                                            },
+                                            answer: ChallengeAnswer::MD5HashCash(MD5HashCashChallenge::solve(&challenge)),
                                             next_target: next_target(&public_leader_board),
                                         }),
                                     );
@@ -72,9 +70,7 @@ fn main() {
                                     shared::send_message(
                                         &mut stream,
                                         Message::ChallengeResult(ChallengeResult {
-                                            answer: ChallengeAnswer::MonstrousMaze {
-                                                0: MonstrousMazeChallenge::solve(&challenge),
-                                            },
+                                            answer: ChallengeAnswer::MonstrousMaze(MonstrousMazeChallenge::solve(&challenge)),
                                             next_target: next_target(&public_leader_board),
                                         }),
                                     );
@@ -98,7 +94,7 @@ fn main() {
 
 fn next_target(public_leader_board: &Vec<PublicPlayer>) -> String {
     let mut rng = rand::thread_rng();
-    return public_leader_board[rng.gen_range(0..public_leader_board.len())]
+    public_leader_board[rng.gen_range(0..public_leader_board.len())]
         .name
-        .to_string();
+        .to_string()
 }

@@ -29,10 +29,10 @@ pub fn convert_string_to_binary(input: String) -> String {
     let mut name_in_binary = "".to_string();
     // Call into_bytes() which returns a Vec<u8>, and iterate accordingly
     // I only called clone() because this for loop takes ownership
-    for character in input.clone().chars() {
+    for character in input.chars() {
         name_in_binary += to_binary(character);
     }
-    return name_in_binary;
+    name_in_binary
 }
 
 fn to_binary(c: char) -> &'static str {
@@ -66,5 +66,5 @@ pub fn check_number_of_zero(input: String, complexity: u32) -> bool {
             return number_of_zero == complexity;
         }
     }
-    return false;
+    false
 }

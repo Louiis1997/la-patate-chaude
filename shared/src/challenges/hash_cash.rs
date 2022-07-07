@@ -12,11 +12,11 @@ impl Challenge for MD5HashCash {
     type Output = MD5HashCashOutput;
 
     fn name() -> String {
-        return "MD5HashCash".to_string();
+        "MD5HashCash".to_string()
     }
 
     fn new(input: Self::Input) -> Self {
-        return Self { input };
+        Self { input }
     }
 
     fn solve(&self) -> Self::Output {
@@ -64,36 +64,36 @@ impl Challenge for MD5HashCash {
             }
             // println!("================================================================")
         }
-        return final_output;
+        final_output
     }
 
     fn verify(&self, answer: &Self::Output) -> bool {
         let hash_cash_client_answer_in_binary =
             challenges::convert_string_to_binary(answer.hashcode.clone());
-        return challenges::check_number_of_zero(
+        challenges::check_number_of_zero(
             hash_cash_client_answer_in_binary,
-            self.input.complexity.clone(),
-        );
+            self.input.complexity,
+        )
     }
 }
 
 pub fn generate_seed(already_generated_seed: &Vec<u64>) -> Option<u64> {
-    if already_generated_seed.len() == 0 {
+    if already_generated_seed.is_empty() {
         return Some(1);
     }
 
     let last_generated_seed = already_generated_seed.last()?;
     let generated_seed = last_generated_seed + 1;
-    return if already_generated_seed.contains(&generated_seed) {
+    if already_generated_seed.contains(&generated_seed) {
         generate_seed(already_generated_seed)
     } else {
         Some(generated_seed)
-    };
+    }
 }
 
 pub fn complete_hexadecimal_seed_with_zero(input: String) -> String {
     if input.len() < 16 {
-        return complete_hexadecimal_seed_with_zero(format!("0{}", input).to_string());
+        return complete_hexadecimal_seed_with_zero(format!("0{}", input));
     }
-    return input.to_uppercase();
+    input.to_uppercase()
 }

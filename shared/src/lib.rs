@@ -147,7 +147,7 @@ pub fn write_message(mut stream: &TcpStream, message: Message) -> std::io::Resul
             let size = serialized.len() as u32;
             let size = size.to_be_bytes();
             stream.write_all(&size)?;
-            stream.write_all(&serialized.as_bytes())?;
+            stream.write_all(serialized.as_bytes())?;
             Ok(())
         }
         Err(err) => panic!("Serialization failed: {}", err),
@@ -160,7 +160,7 @@ fn serialize_message(message: Message) -> serde_json::Result<String> {
 }
 
 pub fn read_message(mut stream: &TcpStream) -> String {
-    let mut data = [0 as u8; 4];
+    let mut data = [0_u8; 4];
     match stream.read_exact(&mut data) {
         Ok(_) => read_message_data(stream, data),
         Err(e) => {
@@ -174,7 +174,7 @@ fn read_message_data(mut stream: &TcpStream, data: [u8; 4]) -> String {
     let mut data: Vec<u8> = vec![0u8; size];
     match stream.read_exact(&mut data) {
         Ok(_) => {
-            return vec_to_string(data);
+            vec_to_string(data)
         }
         Err(e) => {
             panic!("Failed to read message data: {}", e);
@@ -186,7 +186,7 @@ fn vec_to_string(data: Vec<u8>) -> String {
     match from_utf8(&data) {
         Ok(response) => {
             println!("{}", response);
-            return response.to_string();
+            response.to_string()
         }
         Err(e) => {
             panic!("Failed to convert message data to string: {}", e);
