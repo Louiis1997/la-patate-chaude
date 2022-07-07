@@ -15,7 +15,7 @@ impl Challenge for MonstrousMaze {
     }
 
     fn new(input: Self::Input) -> Self {
-        return Self { input};
+        return Self { input };
     }
 
     fn solve(&self) -> Self::Output {
@@ -38,7 +38,9 @@ impl Challenge for MonstrousMaze {
         let possible_solutions = find_paths(&mut grid, grid_possible_solution);
         match possible_solutions {
             Some(solutions) => {
-                let no_solution_because_died = solutions.iter().all(|solution| solution.endurance_left <= 0);
+                let no_solution_because_died = solutions
+                    .iter()
+                    .all(|solution| solution.endurance_left <= 0);
                 if no_solution_because_died {
                     println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
                     return final_output;
@@ -63,7 +65,8 @@ impl Challenge for MonstrousMaze {
 
                 match get_best_path(successful_paths) {
                     Some(best_path) => {
-                        final_output.path = best_path.path_taken.clone(); }
+                        final_output.path = best_path.path_taken.clone();
+                    }
                     None => {
                         println!("/!\\ No solution because no path found in Monstrous Maze ☹️ /!\\");
                     }
@@ -96,14 +99,17 @@ impl Challenge for MonstrousMaze {
             if is_coordinates_in_grid(next_coordinates, &grid) {
                 current_coordinates = next_coordinates;
                 let current_line: String = grid.grid[current_coordinates.0 as usize].clone();
-                let current_char: char = current_line.chars().nth(current_coordinates.1 as usize).unwrap() as char;
+                let current_char: char = current_line
+                    .chars()
+                    .nth(current_coordinates.1 as usize)
+                    .unwrap() as char;
                 if current_char == MONSTER_CHARACTER {
                     endurance_left -= 1;
-                }
-                else if current_char == END_CHARACTER && current_coordinates == (grid.end.0 as i64, grid.end.1 as i64) {
+                } else if current_char == END_CHARACTER
+                    && current_coordinates == (grid.end.0 as i64, grid.end.1 as i64)
+                {
                     return endurance_left > 0;
-                }
-                else if current_char != ' ' {
+                } else if current_char != ' ' {
                     return false;
                 }
             } else {
@@ -124,7 +130,13 @@ pub struct Grid {
 
 impl Grid {
     pub fn new(input: MonstrousMazeInput) -> Grid {
-        let split_grid = input.grid.split("\n").collect::<Vec<&str>>().iter().map(|line| line.to_string()).collect::<Vec<String>>();
+        let split_grid = input
+            .grid
+            .split("\n")
+            .collect::<Vec<&str>>()
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<String>>();
         let grid_start = Grid::find_start_coordinates(&split_grid);
         let grid_end = Grid::find_end_coordinates(&split_grid);
 
@@ -171,34 +183,50 @@ const MONSTER_CHARACTER: char = 'M';
 const FREE_WAY_CHARACTER: char = ' ';
 
 /// Get best path by used endurance and path length
-pub fn get_best_path(filtered_possible_solutions: Vec<&GridPossibleSolution>) -> Option<&GridPossibleSolution> {
-    let solution = filtered_possible_solutions
-        .iter()
-        .min_by(|a, b| {
-            if a.endurance_left == b.endurance_left {
-                return a.path_taken.len().cmp(&b.path_taken.len());
-            }
-            return a.endurance_left.cmp(&b.endurance_left);
-        })?;
+pub fn get_best_path(
+    filtered_possible_solutions: Vec<&GridPossibleSolution>,
+) -> Option<&GridPossibleSolution> {
+    let solution = filtered_possible_solutions.iter().min_by(|a, b| {
+        if a.endurance_left == b.endurance_left {
+            return a.path_taken.len().cmp(&b.path_taken.len());
+        }
+        return a.endurance_left.cmp(&b.endurance_left);
+    })?;
     Some(solution)
 }
 
-pub fn find_paths(grid: &mut Grid, mut grid_possible_solution: GridPossibleSolution) -> Option<Vec<GridPossibleSolution>> {
-    if grid_possible_solution.visited_coordinates.contains(&grid_possible_solution.current_coordinates) {
+pub fn find_paths(
+    grid: &mut Grid,
+    mut grid_possible_solution: GridPossibleSolution,
+) -> Option<Vec<GridPossibleSolution>> {
+    if grid_possible_solution
+        .visited_coordinates
+        .contains(&grid_possible_solution.current_coordinates)
+    {
         return Some(vec![]);
     }
     if grid_possible_solution.endurance_left <= 0 {
         return Some(vec![]);
     }
 
-    grid_possible_solution.visited_coordinates.push(grid_possible_solution.current_coordinates);
+    grid_possible_solution
+        .visited_coordinates
+        .push(grid_possible_solution.current_coordinates);
 
     let mut paths: Vec<GridPossibleSolution> = vec![];
 
-    let current_line: String = grid.grid[grid_possible_solution.current_coordinates.0 as usize].clone();
-    let current_char: char = current_line.chars().nth(grid_possible_solution.current_coordinates.1 as usize)? as char;
+    let current_line: String =
+        grid.grid[grid_possible_solution.current_coordinates.0 as usize].clone();
+    let current_char: char = current_line
+        .chars()
+        .nth(grid_possible_solution.current_coordinates.1 as usize)?
+        as char;
 
-    if current_char == START_CHARACTER || current_char == END_CHARACTER || current_char == MONSTER_CHARACTER || current_char == FREE_WAY_CHARACTER {
+    if current_char == START_CHARACTER
+        || current_char == END_CHARACTER
+        || current_char == MONSTER_CHARACTER
+        || current_char == FREE_WAY_CHARACTER
+    {
         if current_char == END_CHARACTER {
             grid_possible_solution.success = true;
             paths.push(grid_possible_solution);
@@ -229,8 +257,17 @@ fn go_to_left(
     grid: &mut Grid,
 ) {
     let left_direction = '<';
-    let left_coordinates = (grid_possible_solution.current_coordinates.0, grid_possible_solution.current_coordinates.1 - 1);
-    move_in_maze(left_direction, left_coordinates, grid_possible_solution, grid, all_paths);
+    let left_coordinates = (
+        grid_possible_solution.current_coordinates.0,
+        grid_possible_solution.current_coordinates.1 - 1,
+    );
+    move_in_maze(
+        left_direction,
+        left_coordinates,
+        grid_possible_solution,
+        grid,
+        all_paths,
+    );
 }
 
 fn go_to_top(
@@ -239,8 +276,17 @@ fn go_to_top(
     grid: &mut Grid,
 ) {
     let top_direction = '^';
-    let top_coordinates = (grid_possible_solution.current_coordinates.0 - 1, grid_possible_solution.current_coordinates.1);
-    move_in_maze(top_direction, top_coordinates, grid_possible_solution, grid, all_paths);
+    let top_coordinates = (
+        grid_possible_solution.current_coordinates.0 - 1,
+        grid_possible_solution.current_coordinates.1,
+    );
+    move_in_maze(
+        top_direction,
+        top_coordinates,
+        grid_possible_solution,
+        grid,
+        all_paths,
+    );
 }
 
 fn go_to_right(
@@ -249,8 +295,17 @@ fn go_to_right(
     grid: &mut Grid,
 ) {
     let right_direction = '>';
-    let right_coordinates = (grid_possible_solution.current_coordinates.0, grid_possible_solution.current_coordinates.1 + 1);
-    move_in_maze(right_direction, right_coordinates, grid_possible_solution, grid, all_paths);
+    let right_coordinates = (
+        grid_possible_solution.current_coordinates.0,
+        grid_possible_solution.current_coordinates.1 + 1,
+    );
+    move_in_maze(
+        right_direction,
+        right_coordinates,
+        grid_possible_solution,
+        grid,
+        all_paths,
+    );
 }
 
 fn go_to_bottom(
@@ -259,8 +314,17 @@ fn go_to_bottom(
     grid: &mut Grid,
 ) {
     let bottom_direction = 'v';
-    let bottom_coordinates = (grid_possible_solution.current_coordinates.0 + 1, grid_possible_solution.current_coordinates.1);
-    move_in_maze(bottom_direction, bottom_coordinates, grid_possible_solution, grid, all_paths);
+    let bottom_coordinates = (
+        grid_possible_solution.current_coordinates.0 + 1,
+        grid_possible_solution.current_coordinates.1,
+    );
+    move_in_maze(
+        bottom_direction,
+        bottom_coordinates,
+        grid_possible_solution,
+        grid,
+        all_paths,
+    );
 }
 
 fn move_in_maze(
@@ -268,7 +332,8 @@ fn move_in_maze(
     new_coordinates: (i64, i64),
     grid_possible_solution: &GridPossibleSolution,
     grid: &mut Grid,
-    all_paths: &mut Vec<GridPossibleSolution>) {
+    all_paths: &mut Vec<GridPossibleSolution>,
+) {
     if is_coordinates_in_grid(new_coordinates, grid) {
         let new_grid_possible_solution = GridPossibleSolution {
             current_coordinates: new_coordinates,
@@ -292,23 +357,27 @@ fn is_coordinates_in_grid(coordinates: (i64, i64), grid: &Grid) -> bool {
     let (line_index, column_index) = coordinates;
     let line_count = grid.grid.len();
     let column_count = grid.grid[0].len();
-    return line_index < line_count as i64 && column_index < column_count as i64 && line_index >= 0 && column_index >= 0;
+    return line_index < line_count as i64
+        && column_index < column_count as i64
+        && line_index >= 0
+        && column_index >= 0;
 }
 
 #[cfg(test)]
 mod monstrous_maze_tests {
-    use crate::challenges::Challenge;
     use crate::challenges::monstrous_maze::MonstrousMaze;
+    use crate::challenges::Challenge;
     use crate::MonstrousMazeInput;
 
     #[test]
     fn monstrous_maze_challenge() {
         let monstrous_maze_input: MonstrousMazeInput = MonstrousMazeInput {
             endurance: 10,
-            grid:"|I|\n\
+            grid: "|I|\n\
                  | |\n\
                  | |\n\
-                 |X|\n".to_string(),
+                 |X|\n"
+                .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = "vvv".to_string();

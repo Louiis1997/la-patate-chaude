@@ -1,6 +1,6 @@
-use md5;
 use crate::challenges::Challenge;
 use crate::{challenges, MD5HashCashInput, MD5HashCashOutput};
+use md5;
 
 #[derive(Debug, Clone)]
 pub struct MD5HashCash {
@@ -16,7 +16,7 @@ impl Challenge for MD5HashCash {
     }
 
     fn new(input: Self::Input) -> Self {
-        return Self {input};
+        return Self { input };
     }
 
     fn solve(&self) -> Self::Output {
@@ -33,17 +33,23 @@ impl Challenge for MD5HashCash {
                     generated_seeds.push(seed);
                     // println!("seed: {}", seed);
 
-                    let seed_as_hexadecimal_string = complete_hexadecimal_seed_with_zero(format!("{:x}", seed));
+                    let seed_as_hexadecimal_string =
+                        complete_hexadecimal_seed_with_zero(format!("{:x}", seed));
                     // println!("New seed as hexadecimal string: {}", seed_as_hexadecimal_string);
 
-                    let concatenated = format!("{}{}", seed_as_hexadecimal_string, self.input.message.as_str());
+                    let concatenated = format!(
+                        "{}{}",
+                        seed_as_hexadecimal_string,
+                        self.input.message.as_str()
+                    );
 
                     let hashcode = md5::compute(concatenated);
 
                     let hashcode_string = format!("{:x}", hashcode).to_uppercase();
                     // println!("Digest string: {}", hashcode_string);
 
-                    let hashcode_binary = challenges::convert_string_to_binary(hashcode_string.clone());
+                    let hashcode_binary =
+                        challenges::convert_string_to_binary(hashcode_string.clone());
                     // println!("Digest bits: {:?}", digest_binary);
 
                     if challenges::check_number_of_zero(hashcode_binary, self.input.complexity) {
@@ -62,8 +68,12 @@ impl Challenge for MD5HashCash {
     }
 
     fn verify(&self, answer: &Self::Output) -> bool {
-        let hash_cash_client_answer_in_binary = challenges::convert_string_to_binary(answer.hashcode.clone());
-        return challenges::check_number_of_zero(hash_cash_client_answer_in_binary, self.input.complexity.clone());
+        let hash_cash_client_answer_in_binary =
+            challenges::convert_string_to_binary(answer.hashcode.clone());
+        return challenges::check_number_of_zero(
+            hash_cash_client_answer_in_binary,
+            self.input.complexity.clone(),
+        );
     }
 }
 
@@ -78,7 +88,7 @@ pub fn generate_seed(already_generated_seed: &Vec<u64>) -> Option<u64> {
         generate_seed(already_generated_seed)
     } else {
         Some(generated_seed)
-    }
+    };
 }
 
 pub fn complete_hexadecimal_seed_with_zero(input: String) -> String {
