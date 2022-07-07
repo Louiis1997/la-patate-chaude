@@ -254,7 +254,7 @@ fn main() {
                 let current_challenge = MonstrousMazeChallenge::new(challenge_input.clone());
                 let success = current_challenge.verify(&monstrous_maze_answer);
                 reported_challenges.push(ReportedChallengeResult {
-                    name: MD5HashCashChallenge::name(),
+                    name: MonstrousMazeChallenge::name(),
                     value: generate_challenge_value(success, current_challenge_used_time, current_player.name.clone()),
                 });
                 match update_player_in_player_list(success, stream.peer_addr().unwrap().to_string(), current_challenge_used_time) {
