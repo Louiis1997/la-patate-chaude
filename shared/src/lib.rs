@@ -173,9 +173,7 @@ fn read_message_data(mut stream: &TcpStream, data: [u8; 4]) -> String {
     let size = u32::from_be_bytes(data) as usize;
     let mut data: Vec<u8> = vec![0u8; size];
     match stream.read_exact(&mut data) {
-        Ok(_) => {
-            vec_to_string(data)
-        }
+        Ok(_) => vec_to_string(data),
         Err(e) => {
             panic!("Failed to read message data: {}", e);
         }

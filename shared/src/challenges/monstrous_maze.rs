@@ -43,7 +43,9 @@ impl Challenge for MonstrousMaze {
                     return final_output;
                 }
 
-                let no_solution_because_died = solutions.iter().all(|solution| solution.endurance_left <= 0);
+                let no_solution_because_died = solutions
+                    .iter()
+                    .all(|solution| solution.endurance_left <= 0);
                 if no_solution_because_died {
                     println!("/!\\ No solution found because '☠️ YOU DIED ☠️' /!\\");
                     return final_output;
@@ -371,8 +373,8 @@ fn is_coordinates_in_grid(coordinates: (i64, i64), grid: &Grid) -> bool {
 
 #[cfg(test)]
 mod monstrous_maze_tests {
-    use crate::challenges::Challenge;
     use crate::challenges::monstrous_maze::MonstrousMaze;
+    use crate::challenges::Challenge;
     use crate::{MonstrousMazeInput, MonstrousMazeOutput};
 
     #[test]
@@ -384,7 +386,8 @@ mod monstrous_maze_tests {
                    | |\n\
                    | |\n\
                    |X|\n\
-                   └─┘".to_string(),
+                   └─┘"
+            .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = "vvv".to_string();
@@ -406,7 +409,8 @@ mod monstrous_maze_tests {
                    |─|\n\
                    | |\n\
                    |X|\n\
-                   └─┘".to_string(),
+                   └─┘"
+            .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = "".to_string();
@@ -428,7 +432,8 @@ mod monstrous_maze_tests {
                    |M|\n\
                    | |\n\
                    |X|\n\
-                   └─┘".to_string(),
+                   └─┘"
+            .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = "vvvv".to_string();
@@ -449,7 +454,8 @@ mod monstrous_maze_tests {
                    |M|\n\
                    |M|\n\
                    |X|\n\
-                   └─┘".to_string(),
+                   └─┘"
+            .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = "".to_string();
@@ -470,7 +476,8 @@ mod monstrous_maze_tests {
                    |M  |\n\
                    |M  |\n\
                    |X  |\n\
-                   └───┘".to_string(),
+                   └───┘"
+                .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let expected_path = ">vv<v".to_string();
@@ -547,7 +554,8 @@ mod monstrous_maze_tests {
                    |M|\n\
                    | |\n\
                    |X|\n\
-                   └─┘".to_string(),
+                   └─┘"
+            .to_string(),
         };
         let monstrous_maze_challenge = MonstrousMaze::new(monstrous_maze_input);
         let output: MonstrousMazeOutput = MonstrousMazeOutput {

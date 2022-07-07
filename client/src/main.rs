@@ -59,7 +59,9 @@ fn main() {
                                     shared::send_message(
                                         &mut stream,
                                         Message::ChallengeResult(ChallengeResult {
-                                            answer: ChallengeAnswer::MD5HashCash(MD5HashCashChallenge::solve(&challenge)),
+                                            answer: ChallengeAnswer::MD5HashCash(
+                                                MD5HashCashChallenge::solve(&challenge),
+                                            ),
                                             next_target: next_target(&public_leader_board),
                                         }),
                                     );
@@ -70,7 +72,9 @@ fn main() {
                                     shared::send_message(
                                         &mut stream,
                                         Message::ChallengeResult(ChallengeResult {
-                                            answer: ChallengeAnswer::MonstrousMaze(MonstrousMazeChallenge::solve(&challenge)),
+                                            answer: ChallengeAnswer::MonstrousMaze(
+                                                MonstrousMazeChallenge::solve(&challenge),
+                                            ),
                                             next_target: next_target(&public_leader_board),
                                         }),
                                     );

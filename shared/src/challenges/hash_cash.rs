@@ -70,10 +70,7 @@ impl Challenge for MD5HashCash {
     fn verify(&self, answer: &Self::Output) -> bool {
         let hash_cash_client_answer_in_binary =
             challenges::convert_string_to_binary(answer.hashcode.clone());
-        challenges::check_number_of_zero(
-            hash_cash_client_answer_in_binary,
-            self.input.complexity,
-        )
+        challenges::check_number_of_zero(hash_cash_client_answer_in_binary, self.input.complexity)
     }
 }
 
