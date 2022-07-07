@@ -29,6 +29,7 @@ fn main() {
     static mut PUBLIC_PLAYERS_TCP_STREAM: Vec<PublicPlayerTCPStream> = Vec::new();
     static mut PUBLIC_PLAYERS: Vec<PublicPlayer> = Vec::new();
     static mut NB_PLAYED_CHALLENGES: i32 = 0;
+    static mut CURRENT_CHALLENGE: Challenges = Challenges::None();
 
     for stream in listener.incoming() {
         match stream {
@@ -46,7 +47,6 @@ fn main() {
 
     unsafe fn handle_client(stream: &TcpStream) {
         let response = shared::read_message(&stream);
-        let mut current_challenge: Challenges = get_random_game();
         let reported_challenges: Vec<ReportedChallengeResult> = vec![];
         match serde_json::from_str(&response) {
             Ok(response) => {
@@ -63,7 +63,7 @@ fn main() {
                             let random_player = get_random_next_player(PUBLIC_PLAYERS.clone());
                             let random_player_stream = PUBLIC_PLAYERS_TCP_STREAM.iter().find(|player| player.player.stream_id == random_player.stream_id);
                             let random_player_stream = random_player_stream.unwrap().stream.try_clone().unwrap();
-                            current_challenge = launch_game(current_challenge.clone(), random_player_stream);
+                            CURRENT_CHALLENGE = launch_game(get_random_game(), random_player_stream);
                         }
                     },
                     Message::ChallengeResult(challenge_result) => {
@@ -77,14 +77,20 @@ fn main() {
                             Some(player) => { current_player = player; }
                             None => { panic!("Failed to get current player") }
                         };
-                        let next_player_stream = handle_client_challenge_response(&stream, current_player, current_challenge, challenge_result, reported_challenges);
+
+                        match CURRENT_CHALLENGE {
+                            Challenges::None(..) => {
+                                panic!("Current challenge is None !");
+                            },
+                            _ => {}
+                        }
+                        let next_player_stream = handle_client_challenge_response(&stream, current_player, CURRENT_CHALLENGE.clone(), challenge_result.clone(), reported_challenges);
                         NB_PLAYED_CHALLENGES += 1;
                         if NB_PLAYED_CHALLENGES >= 3 {
                             send_to_all_players(Message::EndOfGame(EndOfGame { leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()) }));
-                            println!("{}", " ==== The End ==== ");
                             process::exit(0);
                         }
-                        launch_game(get_random_game(), next_player_stream);
+                        CURRENT_CHALLENGE = launch_game(get_random_game(), next_player_stream);
                     },
                     _ => {}
                 }
@@ -274,7 +280,7 @@ fn main() {
 
     fn get_random_game() -> Challenges {
         let mut rng = rand::thread_rng();
-        let challenge_index: usize = rng.gen_range(0..1);
+        let challenge_index: usize = rng.gen_range(0..=1);
         match challenge_index {
             0 => {
                 let challenge_input = MD5HashCashInput {
@@ -305,6 +311,9 @@ fn main() {
             Challenges::MonstrousMaze(challenge) => {
                 shared::send_message(&stream, Message::Challenge(MonstrousMaze(challenge.clone().input)));
                 Challenges::MonstrousMaze(challenge)
+            }
+            _ => {
+                Challenges::None()
             }
         };
     }

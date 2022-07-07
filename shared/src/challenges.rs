@@ -7,6 +7,7 @@ use monstrous_maze::MonstrousMaze;
 pub enum Challenges {
     MD5HashCash(MD5HashCash),
     MonstrousMaze(MonstrousMaze),
+    None(),
 }
 
 pub trait Challenge {
