@@ -115,6 +115,7 @@ fn main() {
                         send_to_all_players(Message::EndOfGame(EndOfGame {
                             leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()),
                         }));
+                        println!("{}", " ==== Game Over ==== ");
                         process::exit(0);
                     }
                     CURRENT_CHALLENGE = launch_game(get_random_game(), next_player_stream);
