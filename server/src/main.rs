@@ -112,11 +112,8 @@ fn main() {
                     );
                     NB_PLAYED_CHALLENGES += 1;
                     if NB_PLAYED_CHALLENGES >= 3 {
-                        send_to_all_players(Message::EndOfGame(EndOfGame {
-                            leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()),
-                        }));
-                        println!("{}", " ==== Game Over ==== ");
-                        process::exit(0);
+                        println!("whats");
+                        end_game(true);
                     }
                     CURRENT_CHALLENGE = launch_game(get_random_game(), next_player_stream);
                 }
@@ -125,6 +122,16 @@ fn main() {
             Err(err) => {
                 panic!("Failed to deserialize the message received: {}", err)
             }
+        }
+    }
+
+    unsafe fn end_game(exit: bool) {
+        send_to_all_players(Message::EndOfGame(EndOfGame {
+            leader_board: PublicLeaderBoard(PUBLIC_PLAYERS.clone()),
+        }));
+        println!("{}", " ==== Game Over ==== ");
+        if exit {
+            process::exit(0);
         }
     }
 
@@ -309,7 +316,9 @@ fn main() {
                                 return next_player_stream.unwrap().stream.try_clone().unwrap();
                             }
                             None => {
-                                panic!("No more players ???");
+                                println!("No more (active) players OR player not found");
+                                end_game(false);
+                                process::exit(0);
                             }
                         }
                     }
@@ -357,7 +366,9 @@ fn main() {
                                 return next_player_stream.unwrap().stream.try_clone().unwrap();
                             }
                             None => {
-                                panic!("No more players ???");
+                                println!("No more (active) players OR player not found");
+                                end_game(false);
+                                process::exit(0);
                             }
                         }
                     }
